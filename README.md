@@ -32,6 +32,10 @@ npm run verify:supabase
 
 See [PRD_Project_Team_Directory.md](PRD_Project_Team_Directory.md) for the full product specification.
 
+## Supabase MCP
+
+Connect Cursor to your sandbox with [docs/MCP_SUPABASE_SETUP.md](docs/MCP_SUPABASE_SETUP.md). The repo includes `.mcp.json` scoped to project ref `tgenbkuikazblpzkogvm`.
+
 ## Submit a pull request
 
 1. Ensure checks pass locally:

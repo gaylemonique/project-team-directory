@@ -6,12 +6,37 @@ type TeamMemberFormProps = {
   categories: ProjectCategory[];
   formData: TeamMemberFormData;
   errors: FormErrors;
+  photoPreviewUrl: string | null;
+  photoFileName: string | null;
+  photoError?: string;
   isSaving: boolean;
   isEditing: boolean;
   onChange: (field: keyof TeamMemberFormData, value: string) => void;
+  onPhotoSelect: (file: File | null) => void;
+  onPhotoRemove: () => void;
   onSubmit: () => void;
   onCancel: () => void;
 };
+
+function SavingLabel({
+  isSaving,
+  isEditing,
+  hasPhotoUpload,
+}: {
+  isSaving: boolean;
+  isEditing: boolean;
+  hasPhotoUpload: boolean;
+}) {
+  if (!isSaving) {
+    return isEditing ? "Save changes" : "Create profile";
+  }
+
+  if (hasPhotoUpload) {
+    return isEditing ? "Uploading and saving..." : "Uploading and creating...";
+  }
+
+  return isEditing ? "Saving changes..." : "Creating profile...";
+}
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -35,12 +60,18 @@ export function TeamMemberForm({
   categories,
   formData,
   errors,
+  photoPreviewUrl,
+  photoFileName,
+  photoError,
   isSaving,
   isEditing,
   onChange,
+  onPhotoSelect,
+  onPhotoRemove,
   onSubmit,
   onCancel,
 }: TeamMemberFormProps) {
+  const hasPhotoUpload = Boolean(photoFileName);
   return (
     <section
       aria-labelledby="member-form-heading"
@@ -140,21 +171,60 @@ export function TeamMemberForm({
         </div>
 
         <div className="sm:col-span-2">
-          <label htmlFor="photo_url" className="mb-1.5 block text-sm font-medium">
-            Photo URL
-          </label>
-          <input
-            id="photo_url"
-            name="photo_url"
-            type="url"
-            inputMode="url"
-            placeholder="https://..."
-            value={formData.photo_url}
-            onChange={(event) => onChange("photo_url", event.target.value)}
-            className={inputClass(Boolean(errors.photo_url))}
-            aria-invalid={Boolean(errors.photo_url)}
-          />
-          <FieldError message={errors.photo_url} />
+          <span className="mb-1.5 block text-sm font-medium">Profile photo</span>
+          <div className="rounded-md border border-border bg-surface p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {photoPreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreviewUrl}
+                  alt="Selected profile photo preview"
+                  className="h-20 w-20 shrink-0 rounded-md border border-border object-cover"
+                />
+              ) : (
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-surface-muted text-xs text-muted">
+                  No photo
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1 space-y-2">
+                <label
+                  htmlFor="photo"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-border-strong hover:bg-surface-muted"
+                >
+                  {photoPreviewUrl ? "Replace photo" : "Upload photo"}
+                </label>
+                <input
+                  id="photo"
+                  name="photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  disabled={isSaving}
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    onPhotoSelect(file);
+                    event.target.value = "";
+                  }}
+                />
+                <p className="text-xs text-muted">
+                  JPG, PNG, WebP, or GIF. Max 5 MB.
+                  {photoFileName ? ` Selected: ${photoFileName}` : null}
+                </p>
+                {photoPreviewUrl ? (
+                  <button
+                    type="button"
+                    onClick={onPhotoRemove}
+                    disabled={isSaving}
+                    className="text-xs font-medium text-danger underline-offset-2 hover:underline disabled:opacity-50"
+                  >
+                    Remove photo
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <FieldError message={photoError} />
         </div>
 
         <div>
@@ -268,13 +338,11 @@ export function TeamMemberForm({
             disabled={isSaving}
             className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving
-              ? isEditing
-                ? "Saving changes..."
-                : "Creating profile..."
-              : isEditing
-                ? "Save changes"
-                : "Create profile"}
+            <SavingLabel
+              isSaving={isSaving}
+              isEditing={isEditing}
+              hasPhotoUpload={hasPhotoUpload}
+            />
           </button>
         </div>
       </form>

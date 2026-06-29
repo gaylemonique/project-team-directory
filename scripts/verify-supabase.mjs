@@ -103,6 +103,48 @@ async function main() {
   }
 
   console.log("OK: Deleted test member");
+
+  const testPhotoPath = `verify/${Date.now()}.png`;
+  const testPhoto = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  const uploaded = await supabase.storage
+    .from("team-member-photos")
+    .upload(testPhotoPath, testPhoto, {
+      contentType: "image/png",
+      upsert: false,
+    });
+
+  if (uploaded.error) {
+    console.error(
+      `FAIL: Storage upload — ${uploaded.error.message}. Run supabase/migrations/20260629100000_team_member_photos_storage.sql in your project.`,
+    );
+    process.exit(1);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("team-member-photos")
+    .getPublicUrl(testPhotoPath);
+
+  if (!publicUrlData.publicUrl) {
+    console.error("FAIL: Storage public URL — no URL returned");
+    process.exit(1);
+  }
+
+  console.log("OK: Uploaded test photo to team-member-photos bucket");
+
+  const removed = await supabase.storage
+    .from("team-member-photos")
+    .remove([testPhotoPath]);
+
+  if (removed.error) {
+    console.error(`FAIL: Storage delete — ${removed.error.message}`);
+    process.exit(1);
+  }
+
+  console.log("OK: Deleted test photo from team-member-photos bucket");
   console.log("ALL CHECKS PASSED");
 }
 
