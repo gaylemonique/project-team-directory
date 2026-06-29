@@ -1,4 +1,5 @@
 import type { FormErrors, TeamMemberFormData } from "@/types/team-directory";
+import { ADD_NEW_CATEGORY } from "@/types/team-directory";
 
 function isValidGitHubUrl(value: string): boolean {
   try {
@@ -13,6 +14,7 @@ function isValidGitHubUrl(value: string): boolean {
 
 export function validateTeamMemberForm(
   data: TeamMemberFormData,
+  options?: { newCategoryName?: string },
 ): FormErrors {
   const errors: FormErrors = {};
 
@@ -24,7 +26,11 @@ export function validateTeamMemberForm(
     errors.role = "Role is required.";
   }
 
-  if (!data.project_category_id) {
+  if (data.project_category_id === ADD_NEW_CATEGORY) {
+    if (!options?.newCategoryName?.trim()) {
+      errors.new_category_name = "Category name is required.";
+    }
+  } else if (!data.project_category_id) {
     errors.project_category_id = "Project category is required.";
   }
 

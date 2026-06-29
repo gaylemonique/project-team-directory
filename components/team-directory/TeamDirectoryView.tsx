@@ -8,6 +8,7 @@ import { TeamDirectoryHeader } from "@/components/team-directory/TeamDirectoryHe
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
 import { TeamMemberForm } from "@/components/team-directory/TeamMemberForm";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
 import {
   deleteTeamMemberPhoto,
   isManagedTeamMemberPhoto,
@@ -22,6 +23,7 @@ import {
 import {
   EMPTY_FORM,
   FILTER_ALL,
+  ADD_NEW_CATEGORY,
   type CategoryFilterValue,
   type FormErrors,
   type ProjectCategory,
@@ -51,6 +53,7 @@ export function TeamDirectoryView() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | undefined>();
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const photoObjectUrlRef = useRef<string | null>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -100,11 +103,21 @@ export function TeamDirectoryView() {
         if (cancelled) return;
 
         if (categoriesResult.error) {
-          throw new Error(categoriesResult.error.message);
+          throw new Error(
+            getSupabaseErrorMessage(
+              categoriesResult.error,
+              "Unable to load project categories.",
+            ),
+          );
         }
 
         if (membersResult.error) {
-          throw new Error(membersResult.error.message);
+          throw new Error(
+            getSupabaseErrorMessage(
+              membersResult.error,
+              "Unable to load team members.",
+            ),
+          );
         }
 
         setCategories(categoriesResult.data ?? []);
@@ -157,6 +170,7 @@ export function TeamDirectoryView() {
     setPhotoPreviewUrl(null);
     setPhotoError(undefined);
     setExistingPhotoUrl(null);
+    setNewCategoryName("");
   };
 
   const handleFieldChange = (
@@ -164,7 +178,20 @@ export function TeamDirectoryView() {
     value: string,
   ) => {
     setFormData((current) => ({ ...current, [field]: value }));
-    setFormErrors((current) => ({ ...current, [field]: undefined }));
+    if (field === "project_category_id" && value !== ADD_NEW_CATEGORY) {
+      setNewCategoryName("");
+    }
+    setFormErrors((current) => ({
+      ...current,
+      [field]: undefined,
+      ...(field === "project_category_id" ? { new_category_name: undefined } : {}),
+    }));
+    setActionError(null);
+  };
+
+  const handleNewCategoryNameChange = (value: string) => {
+    setNewCategoryName(value);
+    setFormErrors((current) => ({ ...current, new_category_name: undefined }));
     setActionError(null);
   };
 
@@ -195,7 +222,7 @@ export function TeamDirectoryView() {
   };
 
   const handleSubmit = async () => {
-    const errors = validateTeamMemberForm(formData);
+    const errors = validateTeamMemberForm(formData, { newCategoryName });
     const nextPhotoError = validatePhotoFile(selectedPhotoFile);
     setFormErrors(errors);
     setPhotoError(nextPhotoError);
@@ -211,6 +238,33 @@ export function TeamDirectoryView() {
       const supabase = getSupabaseClient();
       let photoUrl = formData.photo_url.trim() || null;
       const previousPhotoUrl = existingPhotoUrl;
+      let categoryId = formData.project_category_id;
+
+      if (categoryId === ADD_NEW_CATEGORY) {
+        const trimmedName = newCategoryName.trim();
+        const { data: createdCategory, error: categoryError } = await supabase
+          .from("project_categories")
+          .insert({ name: trimmedName })
+          .select("*")
+          .single();
+
+        if (categoryError) {
+          throw new Error(
+            getSupabaseErrorMessage(
+              categoryError,
+              "Unable to create project category.",
+            ),
+          );
+        }
+
+        categoryId = createdCategory.id;
+        setCategories((current) =>
+          [...current, createdCategory as ProjectCategory].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          ),
+        );
+        setNewCategoryName("");
+      }
 
       if (selectedPhotoFile) {
         photoUrl = await uploadTeamMemberPhoto(
@@ -221,6 +275,7 @@ export function TeamDirectoryView() {
 
       const payload = {
         ...formDataToPayload(formData),
+        project_category_id: categoryId,
         photo_url: photoUrl,
       };
 
@@ -232,7 +287,11 @@ export function TeamDirectoryView() {
           .select(MEMBER_SELECT)
           .single();
 
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw new Error(
+            getSupabaseErrorMessage(error, "Request failed."),
+          );
+        }
 
         if (
           previousPhotoUrl &&
@@ -256,7 +315,11 @@ export function TeamDirectoryView() {
           .select(MEMBER_SELECT)
           .single();
 
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw new Error(
+            getSupabaseErrorMessage(error, "Request failed."),
+          );
+        }
 
         setMembers((current) => [data as TeamMember, ...current]);
         showSuccess(`${payload.name} was added to the directory.`);
@@ -308,7 +371,11 @@ export function TeamDirectoryView() {
         .delete()
         .eq("id", pendingDeleteMember.id);
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(
+          getSupabaseErrorMessage(error, "Unable to delete team member profile."),
+        );
+      }
 
       if (
         pendingDeleteMember.photo_url &&
@@ -433,12 +500,14 @@ export function TeamDirectoryView() {
               categories={categories}
               formData={formData}
               errors={formErrors}
+              newCategoryName={newCategoryName}
               photoPreviewUrl={photoPreviewUrl}
               photoFileName={selectedPhotoFile?.name ?? null}
               photoError={photoError}
               isSaving={isSaving}
               isEditing={Boolean(editingMemberId)}
               onChange={handleFieldChange}
+              onNewCategoryNameChange={handleNewCategoryNameChange}
               onPhotoSelect={handlePhotoSelect}
               onPhotoRemove={handlePhotoRemove}
               onSubmit={() => void handleSubmit()}
