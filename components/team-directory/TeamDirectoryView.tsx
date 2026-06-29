@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/team-directory/EmptyState";
 import { ProjectCategoryFilter } from "@/components/team-directory/ProjectCategoryFilter";
 import { TeamDirectoryHeader } from "@/components/team-directory/TeamDirectoryHeader";
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
 import { TeamMemberForm } from "@/components/team-directory/TeamMemberForm";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  deleteTeamMemberPhoto,
+  isManagedTeamMemberPhoto,
+  uploadTeamMemberPhoto,
+  validatePhotoFile,
+} from "@/lib/supabase/storage";
 import {
   formDataToPayload,
   memberToFormData,
@@ -39,8 +45,20 @@ export function TeamDirectoryView() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingDeleteMember, setPendingDeleteMember] =
     useState<TeamMember | null>(null);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | undefined>();
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const photoObjectUrlRef = useRef<string | null>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const revokePhotoObjectUrl = () => {
+    if (photoObjectUrlRef.current) {
+      URL.revokeObjectURL(photoObjectUrlRef.current);
+      photoObjectUrlRef.current = null;
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -114,9 +132,14 @@ export function TeamDirectoryView() {
   }, [filter, members]);
 
   const resetForm = () => {
+    revokePhotoObjectUrl();
     setFormData(EMPTY_FORM);
     setFormErrors({});
     setEditingMemberId(null);
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setPhotoError(undefined);
+    setExistingPhotoUrl(null);
   };
 
   const handleFieldChange = (
@@ -128,11 +151,39 @@ export function TeamDirectoryView() {
     setActionError(null);
   };
 
+  const handlePhotoSelect = (file: File | null) => {
+    if (!file) return;
+
+    const error = validatePhotoFile(file);
+    setPhotoError(error);
+    if (error) {
+      setSelectedPhotoFile(null);
+      return;
+    }
+
+    revokePhotoObjectUrl();
+    const objectUrl = URL.createObjectURL(file);
+    photoObjectUrlRef.current = objectUrl;
+    setSelectedPhotoFile(file);
+    setPhotoPreviewUrl(objectUrl);
+    setActionError(null);
+  };
+
+  const handlePhotoRemove = () => {
+    revokePhotoObjectUrl();
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setPhotoError(undefined);
+    setFormData((current) => ({ ...current, photo_url: "" }));
+  };
+
   const handleSubmit = async () => {
     const errors = validateTeamMemberForm(formData);
+    const nextPhotoError = validatePhotoFile(selectedPhotoFile);
     setFormErrors(errors);
+    setPhotoError(nextPhotoError);
 
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0 || nextPhotoError) {
       return;
     }
 
@@ -141,7 +192,20 @@ export function TeamDirectoryView() {
 
     try {
       const supabase = getSupabaseClient();
-      const payload = formDataToPayload(formData);
+      let photoUrl = formData.photo_url.trim() || null;
+      const previousPhotoUrl = existingPhotoUrl;
+
+      if (selectedPhotoFile) {
+        photoUrl = await uploadTeamMemberPhoto(
+          selectedPhotoFile,
+          editingMemberId ?? undefined,
+        );
+      }
+
+      const payload = {
+        ...formDataToPayload(formData),
+        photo_url: photoUrl,
+      };
 
       if (editingMemberId) {
         const { data, error } = await supabase
@@ -152,6 +216,14 @@ export function TeamDirectoryView() {
           .single();
 
         if (error) throw new Error(error.message);
+
+        if (
+          previousPhotoUrl &&
+          isManagedTeamMemberPhoto(previousPhotoUrl) &&
+          previousPhotoUrl !== photoUrl
+        ) {
+          await deleteTeamMemberPhoto(previousPhotoUrl);
+        }
 
         setMembers((current) =>
           current.map((member) =>
@@ -183,8 +255,13 @@ export function TeamDirectoryView() {
   };
 
   const handleEdit = (member: TeamMember) => {
+    revokePhotoObjectUrl();
     setEditingMemberId(member.id);
     setFormData(memberToFormData(member));
+    setExistingPhotoUrl(member.photo_url);
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl(member.photo_url);
+    setPhotoError(undefined);
     setFormErrors({});
     setActionError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -213,6 +290,13 @@ export function TeamDirectoryView() {
         .eq("id", pendingDeleteMember.id);
 
       if (error) throw new Error(error.message);
+
+      if (
+        pendingDeleteMember.photo_url &&
+        isManagedTeamMemberPhoto(pendingDeleteMember.photo_url)
+      ) {
+        await deleteTeamMemberPhoto(pendingDeleteMember.photo_url);
+      }
 
       setMembers((current) =>
         current.filter((member) => member.id !== pendingDeleteMember.id),
@@ -317,9 +401,14 @@ export function TeamDirectoryView() {
               categories={categories}
               formData={formData}
               errors={formErrors}
+              photoPreviewUrl={photoPreviewUrl}
+              photoFileName={selectedPhotoFile?.name ?? null}
+              photoError={photoError}
               isSaving={isSaving}
               isEditing={Boolean(editingMemberId)}
               onChange={handleFieldChange}
+              onPhotoSelect={handlePhotoSelect}
+              onPhotoRemove={handlePhotoRemove}
               onSubmit={() => void handleSubmit()}
               onCancel={resetForm}
             />

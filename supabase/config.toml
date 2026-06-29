@@ -1,0 +1,9 @@
+# Supabase local development config
+# See https://supabase.com/docs/guides/cli/config
+
+project_id = "tgenbkuikazblpzkogvm"
+
+[storage.buckets.team-member-photos]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]

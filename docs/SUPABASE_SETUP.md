@@ -2,17 +2,31 @@
 
 This app uses a **Supabase sandbox project** with the public anon key only. Do not use or expose the service role key.
 
-## 1. Create tables and seed data
+## 1. Create tables, storage bucket, and seed data
 
-Apply the migration in `supabase/migrations/20260629000000_init_team_directory.sql` using one of:
+Apply both migrations in order:
 
-- **Supabase Dashboard:** SQL Editor → paste and run the migration file.
+1. `supabase/migrations/20260629000000_init_team_directory.sql`
+2. `supabase/migrations/20260629100000_team_member_photos_storage.sql` — **required for profile photo uploads**
+
+Using one of:
+
+- **Supabase Dashboard:** SQL Editor → paste and run each migration file.
 - **Supabase CLI:** `supabase link` then `supabase db push`.
 
-The migration creates:
+Verify storage is configured:
+
+```bash
+npm run verify:supabase
+```
+
+You should see `OK: Uploaded test photo to team-member-photos bucket`.
+
+The migrations create:
 
 - `project_categories` — seeded with seven project categories
 - `team_members` — stores team member profiles
+- `team-member-photos` storage bucket — public read, anon upload for profile images
 - Row Level Security policies for anonymous read/write (no auth required for this internal demo)
 
 ## 2. Configure environment variables
@@ -57,7 +71,7 @@ Open [http://localhost:3000/team-directory](http://localhost:3000/team-directory
 | project_category_id | uuid | FK → project_categories, ON DELETE SET NULL |
 | name | text | Required |
 | role | text | Required |
-| photo_url | text | Optional URL |
+| photo_url | text | Optional public URL from Supabase Storage upload |
 | project_assignment | text | Optional |
 | favorite_stack | text | Optional |
 | current_focus | text | Optional |
@@ -66,3 +80,7 @@ Open [http://localhost:3000/team-directory](http://localhost:3000/team-directory
 | profile_url | text | Optional GitHub/LinkedIn URL |
 | created_at | timestamptz | Default now |
 | updated_at | timestamptz | Default now |
+
+### Storage: `team-member-photos`
+
+Public bucket for uploaded profile photos. Accepts JPG, PNG, WebP, and GIF up to 5 MB.

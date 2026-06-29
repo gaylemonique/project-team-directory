@@ -26,10 +26,6 @@ export function validateTeamMemberForm(
     errors.project_category_id = "Project category is required.";
   }
 
-  if (data.photo_url.trim() && !isValidUrl(data.photo_url.trim())) {
-    errors.photo_url = "Enter a valid photo URL (http or https).";
-  }
-
   if (data.profile_url.trim() && !isValidUrl(data.profile_url.trim())) {
     errors.profile_url = "Enter a valid profile URL (http or https).";
   }
