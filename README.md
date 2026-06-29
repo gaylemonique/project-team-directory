@@ -36,6 +36,12 @@ See [PRD_Project_Team_Directory.md](PRD_Project_Team_Directory.md) for the full 
 
 Connect Cursor to your sandbox with [docs/MCP_SUPABASE_SETUP.md](docs/MCP_SUPABASE_SETUP.md). The repo includes `.mcp.json` scoped to project ref `tgenbkuikazblpzkogvm`.
 
+## Vercel deployment
+
+Production: https://project-team-directory.vercel.app
+
+See [docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md) for Git sync behavior and required environment variables.
+
 ## Submit a pull request
 
 1. Ensure checks pass locally:
