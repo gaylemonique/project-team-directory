@@ -6,7 +6,16 @@ import { useEffect, useMemo, useState } from "react";
 import { DirectoryLoadingSkeleton } from "@/components/team-directory/DirectoryLoadingSkeleton";
 import { EmptyState } from "@/components/team-directory/EmptyState";
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
+import { CategoryFormDialog } from "@/components/landing/CategoryFormDialog";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import {
+  categoryToFormData,
+  EMPTY_CATEGORY_FORM,
+  formDataToCategoryPayload,
+  validateProjectCategoryForm,
+  type ProjectCategoryFormData,
+  type ProjectCategoryFormErrors,
+} from "@/lib/team-directory/category-validation";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
 import {
@@ -33,6 +42,12 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
   const [pendingDeleteMember, setPendingDeleteMember] =
     useState<TeamMember | null>(null);
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [categoryFormData, setCategoryFormData] =
+    useState<ProjectCategoryFormData>(EMPTY_CATEGORY_FORM);
+  const [categoryFormErrors, setCategoryFormErrors] =
+    useState<ProjectCategoryFormErrors>({});
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   useEffect(() => {
     if (!actionSuccess) return;
@@ -145,6 +160,73 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
     setPendingDeleteMember(null);
   };
 
+  const handleEditCategoryOpen = () => {
+    if (!category) return;
+    setCategoryFormData(categoryToFormData(category));
+    setCategoryFormErrors({});
+    setActionError(null);
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleEditCategoryCancel = () => {
+    if (isSavingCategory) return;
+    setIsCategoryDialogOpen(false);
+    setCategoryFormData(EMPTY_CATEGORY_FORM);
+    setCategoryFormErrors({});
+  };
+
+  const handleCategoryFormChange = (
+    field: keyof ProjectCategoryFormData,
+    value: string,
+  ) => {
+    setCategoryFormData((current) => ({ ...current, [field]: value }));
+    if (categoryFormErrors[field]) {
+      setCategoryFormErrors((current) => ({ ...current, [field]: undefined }));
+    }
+  };
+
+  const handleCategoryFormSubmit = async () => {
+    if (!category) return;
+
+    const errors = validateProjectCategoryForm(categoryFormData);
+    setCategoryFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsSavingCategory(true);
+    setActionError(null);
+
+    try {
+      const supabase = getSupabaseClient();
+      const payload = formDataToCategoryPayload(categoryFormData);
+      const { data, error } = await supabase
+        .from("project_categories")
+        .update(payload)
+        .eq("id", category.id)
+        .select("*")
+        .single();
+
+      if (error) {
+        throw new Error(
+          getSupabaseErrorMessage(error, "Unable to update project category."),
+        );
+      }
+
+      setCategory(data);
+      setActionSuccess(`${payload.name} was updated.`);
+      setIsCategoryDialogOpen(false);
+      setCategoryFormData(EMPTY_CATEGORY_FORM);
+      setCategoryFormErrors({});
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update project category.",
+      );
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!pendingDeleteMember) return;
 
@@ -218,6 +300,16 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
 
             <div className="flex flex-col items-start gap-3 sm:items-end">
               <ThemeToggle />
+              {!isLoading && category ? (
+                <button
+                  type="button"
+                  onClick={handleEditCategoryOpen}
+                  disabled={isSavingCategory}
+                  className="interactive inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Edit project
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -288,6 +380,18 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
           </div>
         ) : null}
       </main>
+
+      {isCategoryDialogOpen ? (
+        <CategoryFormDialog
+          mode="edit"
+          formData={categoryFormData}
+          errors={categoryFormErrors}
+          isSaving={isSavingCategory}
+          onChange={handleCategoryFormChange}
+          onSubmit={() => void handleCategoryFormSubmit()}
+          onCancel={handleEditCategoryCancel}
+        />
+      ) : null}
 
       {pendingDeleteMember ? (
         <div

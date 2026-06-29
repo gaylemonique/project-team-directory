@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { CategoryFormDialog } from "@/components/landing/CategoryFormDialog";
 import { ProjectCategoryCard } from "@/components/landing/ProjectCategoryCard";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import {
+  categoryToFormData,
+  EMPTY_CATEGORY_FORM,
+  formDataToCategoryPayload,
+  validateProjectCategoryForm,
+  type ProjectCategoryFormData,
+  type ProjectCategoryFormErrors,
+} from "@/lib/team-directory/category-validation";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
 import type { ProjectCategory } from "@/types/team-directory";
@@ -36,6 +45,20 @@ export function ProjectsLandingView() {
   const [pendingDeleteCategory, setPendingDeleteCategory] =
     useState<ProjectCategory | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(
+    null,
+  );
+  const [categoryDialogMode, setCategoryDialogMode] = useState<
+    "add" | "edit" | null
+  >(null);
+  const [editingCategory, setEditingCategory] = useState<ProjectCategory | null>(
+    null,
+  );
+  const [categoryFormData, setCategoryFormData] =
+    useState<ProjectCategoryFormData>(EMPTY_CATEGORY_FORM);
+  const [categoryFormErrors, setCategoryFormErrors] =
+    useState<ProjectCategoryFormErrors>({});
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
   );
 
@@ -138,6 +161,121 @@ export function ProjectsLandingView() {
 
   const handleDeleteCancel = () => {
     setPendingDeleteCategory(null);
+  };
+
+  const handleAddCategoryOpen = () => {
+    setCategoryFormData(EMPTY_CATEGORY_FORM);
+    setCategoryFormErrors({});
+    setEditingCategory(null);
+    setActionError(null);
+    setCategoryDialogMode("add");
+  };
+
+  const handleEditCategoryRequest = (category: ProjectCategory) => {
+    setCategoryFormData(categoryToFormData(category));
+    setCategoryFormErrors({});
+    setEditingCategory(category);
+    setActionError(null);
+    setCategoryDialogMode("edit");
+  };
+
+  const handleCategoryFormCancel = () => {
+    if (isSavingCategory) return;
+    setCategoryDialogMode(null);
+    setEditingCategory(null);
+    setCategoryFormData(EMPTY_CATEGORY_FORM);
+    setCategoryFormErrors({});
+  };
+
+  const handleCategoryFormChange = (
+    field: keyof ProjectCategoryFormData,
+    value: string,
+  ) => {
+    setCategoryFormData((current) => ({ ...current, [field]: value }));
+    if (categoryFormErrors[field]) {
+      setCategoryFormErrors((current) => ({ ...current, [field]: undefined }));
+    }
+  };
+
+  const handleCategoryFormSubmit = async () => {
+    const errors = validateProjectCategoryForm(categoryFormData);
+    setCategoryFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsSavingCategory(true);
+    setActionError(null);
+
+    const payload = formDataToCategoryPayload(categoryFormData);
+    const isEdit = categoryDialogMode === "edit" && editingCategory;
+
+    if (isEdit) {
+      setEditingCategoryId(editingCategory.id);
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+
+      if (isEdit) {
+        const { data, error } = await supabase
+          .from("project_categories")
+          .update(payload)
+          .eq("id", editingCategory.id)
+          .select("*")
+          .single();
+
+        if (error) {
+          throw new Error(
+            getSupabaseErrorMessage(error, "Unable to update project category."),
+          );
+        }
+
+        setCategories((current) =>
+          current
+            .map((category) =>
+              category.id === editingCategory.id
+                ? (data as ProjectCategory)
+                : category,
+            )
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        );
+        setActionSuccess(`${payload.name} was updated.`);
+      } else {
+        const { data, error } = await supabase
+          .from("project_categories")
+          .insert(payload)
+          .select("*")
+          .single();
+
+        if (error) {
+          throw new Error(
+            getSupabaseErrorMessage(error, "Unable to create project category."),
+          );
+        }
+
+        setCategories((current) =>
+          [...current, data as ProjectCategory].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          ),
+        );
+        setActionSuccess(`${payload.name} was added.`);
+      }
+
+      setCategoryDialogMode(null);
+      setEditingCategory(null);
+      setCategoryFormData(EMPTY_CATEGORY_FORM);
+      setCategoryFormErrors({});
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : isEdit
+            ? "Unable to update project category."
+            : "Unable to create project category.",
+      );
+    } finally {
+      setIsSavingCategory(false);
+      setEditingCategoryId(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -257,15 +395,24 @@ export function ProjectsLandingView() {
               No projects yet
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Open the team directory to create the first project category and
-              member profile.
+              Add a project category to organize team profiles, or browse all
+              members across projects.
             </p>
-            <Link
-              href="/team-directory"
-              className="interactive mt-5 inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-            >
-              Go to team directory
-            </Link>
+            <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleAddCategoryOpen}
+                className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+              >
+                Add a category
+              </button>
+              <Link
+                href="/team-directory"
+                className="interactive inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-muted"
+              >
+                View all members
+              </Link>
+            </div>
           </div>
         ) : null}
 
@@ -276,12 +423,21 @@ export function ProjectsLandingView() {
                 {sortedCategories.length}{" "}
                 {sortedCategories.length === 1 ? "project" : "projects"} available
               </p>
-              <Link
-                href="/team-directory"
-                className="interactive text-sm font-medium text-accent underline-offset-2 hover:underline"
-              >
-                View full directory
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddCategoryOpen}
+                  className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+                >
+                  Add a category
+                </button>
+                <Link
+                  href="/team-directory"
+                  className="interactive text-sm font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  View all members
+                </Link>
+              </div>
             </div>
 
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -292,6 +448,8 @@ export function ProjectsLandingView() {
                     memberCount={memberCounts[category.id] ?? 0}
                     index={index}
                     isDeleting={deletingCategoryId === category.id}
+                    isEditing={editingCategoryId === category.id}
+                    onEditRequest={handleEditCategoryRequest}
                     onDeleteRequest={handleDeleteRequest}
                   />
                 </li>
@@ -300,6 +458,18 @@ export function ProjectsLandingView() {
           </>
         ) : null}
       </main>
+
+      {categoryDialogMode ? (
+        <CategoryFormDialog
+          mode={categoryDialogMode}
+          formData={categoryFormData}
+          errors={categoryFormErrors}
+          isSaving={isSavingCategory}
+          onChange={handleCategoryFormChange}
+          onSubmit={() => void handleCategoryFormSubmit()}
+          onCancel={handleCategoryFormCancel}
+        />
+      ) : null}
 
       {pendingDeleteCategory ? (
         <div

@@ -11,28 +11,24 @@ export const ALLOWED_PHOTO_TYPES = [
   "image/gif",
 ] as const;
 
-export function validatePhotoFile(file: File | null): string | undefined {
-  if (!file) return undefined;
-
-  if (!ALLOWED_PHOTO_TYPES.includes(file.type as (typeof ALLOWED_PHOTO_TYPES)[number])) {
-    return "Upload a JPG, PNG, WebP, or GIF image.";
-  }
-
-  if (file.size > MAX_PHOTO_SIZE_BYTES) {
-    return "Image must be 5 MB or smaller.";
-  }
-
-  return undefined;
-}
+const EXTENSION_TO_MIME: Record<string, (typeof ALLOWED_PHOTO_TYPES)[number]> =
+  {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+  };
 
 function getFileExtension(file: File): string {
   const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && ["jpg", "jpeg", "png", "webp", "gif"].includes(fromName)) {
+  if (fromName && fromName in EXTENSION_TO_MIME) {
     return fromName === "jpeg" ? "jpg" : fromName;
   }
 
   switch (file.type) {
     case "image/jpeg":
+    case "image/jpg":
       return "jpg";
     case "image/png":
       return "png";
@@ -43,6 +39,45 @@ function getFileExtension(file: File): string {
     default:
       return "jpg";
   }
+}
+
+export function resolvePhotoContentType(
+  file: File,
+): (typeof ALLOWED_PHOTO_TYPES)[number] | null {
+  if (file.type === "image/jpg") {
+    return "image/jpeg";
+  }
+
+  if (
+    ALLOWED_PHOTO_TYPES.includes(
+      file.type as (typeof ALLOWED_PHOTO_TYPES)[number],
+    )
+  ) {
+    return file.type as (typeof ALLOWED_PHOTO_TYPES)[number];
+  }
+
+  const extension = getFileExtension(file);
+  return EXTENSION_TO_MIME[extension] ?? null;
+}
+
+export function validatePhotoFile(file: File | null): string | undefined {
+  if (!file) return undefined;
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (extension === "heic" || extension === "heif" || file.type === "image/heic") {
+    return "HEIC photos are not supported. Choose JPG, PNG, WebP, or GIF.";
+  }
+
+  const contentType = resolvePhotoContentType(file);
+  if (!contentType) {
+    return "Upload a JPG, PNG, WebP, or GIF image.";
+  }
+
+  if (file.size > MAX_PHOTO_SIZE_BYTES) {
+    return "Image must be 5 MB or smaller.";
+  }
+
+  return undefined;
 }
 
 export function getStoragePathFromPhotoUrl(photoUrl: string): string | null {
@@ -62,6 +97,11 @@ export async function uploadTeamMemberPhoto(
   memberId?: string,
 ): Promise<string> {
   const supabase = getSupabaseClient();
+  const contentType = resolvePhotoContentType(file);
+  if (!contentType) {
+    throw new Error("Upload a JPG, PNG, WebP, or GIF image.");
+  }
+
   const folder = memberId ?? crypto.randomUUID();
   const path = `${folder}/${Date.now()}.${getFileExtension(file)}`;
 
@@ -70,10 +110,16 @@ export async function uploadTeamMemberPhoto(
     .upload(path, file, {
       cacheControl: "3600",
       upsert: false,
-      contentType: file.type,
+      contentType,
     });
 
   if (error) {
+    if (error.message.includes("mime type")) {
+      throw new Error(
+        "This image format is not supported. Use JPG, PNG, WebP, or GIF.",
+      );
+    }
+
     throw new Error(error.message);
   }
 
