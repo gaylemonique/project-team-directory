@@ -6,6 +6,7 @@ create table if not exists project_categories (
   name text not null unique,
   description text,
   team_lead text,
+  website_url text,
   created_at timestamptz default now()
 );
 

@@ -6,12 +6,14 @@ import { useEffect, useMemo, useState } from "react";
 import { DirectoryLoadingSkeleton } from "@/components/team-directory/DirectoryLoadingSkeleton";
 import { EmptyState } from "@/components/team-directory/EmptyState";
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
+import { TeamMemberDetailModal } from "@/components/team-directory/TeamMemberDetailModal";
 import { CategoryFormDialog } from "@/components/landing/CategoryFormDialog";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   categoryToFormData,
   EMPTY_CATEGORY_FORM,
   formDataToCategoryPayload,
+  formatWebsiteLabel,
   validateProjectCategoryForm,
   type ProjectCategoryFormData,
   type ProjectCategoryFormErrors,
@@ -48,6 +50,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
   const [categoryFormErrors, setCategoryFormErrors] =
     useState<ProjectCategoryFormErrors>({});
   const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [viewingMember, setViewingMember] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     if (!actionSuccess) return;
@@ -146,12 +149,14 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
   }, [members.length]);
 
   const handleEdit = (member: TeamMember) => {
+    setViewingMember(null);
     router.push(
       `/team-directory/new?category=${categoryId}&edit=${member.id}`,
     );
   };
 
   const handleDeleteRequest = (member: TeamMember) => {
+    setViewingMember(null);
     setPendingDeleteMember(member);
     setActionError(null);
   };
@@ -293,6 +298,18 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
                   {category.description}
                 </p>
               ) : null}
+              {category?.website_url ? (
+                <p className="mt-2 text-sm">
+                  <a
+                    href={category.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="interactive font-medium text-accent underline-offset-2 hover:underline"
+                  >
+                    {formatWebsiteLabel(category.website_url)}
+                  </a>
+                </p>
+              ) : null}
               {!isLoading && category ? (
                 <p className="mt-2 text-sm text-muted">{memberCountLabel}</p>
               ) : null}
@@ -362,6 +379,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
                   index={index}
                   onEdit={handleEdit}
                   onDelete={handleDeleteRequest}
+                  onView={setViewingMember}
                   isDeleting={deletingMemberId === member.id}
                 />
               </li>
@@ -380,6 +398,16 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
           </div>
         ) : null}
       </main>
+
+      {viewingMember ? (
+        <TeamMemberDetailModal
+          member={viewingMember}
+          isDeleting={deletingMemberId === viewingMember.id}
+          onClose={() => setViewingMember(null)}
+          onEdit={() => handleEdit(viewingMember)}
+          onDelete={() => handleDeleteRequest(viewingMember)}
+        />
+      ) : null}
 
       {isCategoryDialogOpen ? (
         <CategoryFormDialog

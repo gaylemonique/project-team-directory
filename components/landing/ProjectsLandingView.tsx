@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CategoryFormDialog } from "@/components/landing/CategoryFormDialog";
 import { ProjectCategoryCard } from "@/components/landing/ProjectCategoryCard";
+import { ProjectCategoryDetailModal } from "@/components/landing/ProjectCategoryDetailModal";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   categoryToFormData,
   EMPTY_CATEGORY_FORM,
   formDataToCategoryPayload,
+  sortProjectCategoriesByCreatedAt,
   validateProjectCategoryForm,
   type ProjectCategoryFormData,
   type ProjectCategoryFormErrors,
+  type ProjectCategorySortOrder,
 } from "@/lib/team-directory/category-validation";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
@@ -61,6 +64,10 @@ export function ProjectsLandingView() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
   );
+  const [viewingCategory, setViewingCategory] = useState<ProjectCategory | null>(
+    null,
+  );
+  const [sortOrder, setSortOrder] = useState<ProjectCategorySortOrder>("latest");
 
   useEffect(() => {
     if (!actionSuccess) return;
@@ -89,7 +96,7 @@ export function ProjectsLandingView() {
       try {
         const supabase = getSupabaseClient();
         const [categoriesResult, membersResult] = await Promise.all([
-          supabase.from("project_categories").select("*").order("name"),
+          supabase.from("project_categories").select("*").order("created_at", { ascending: false }),
           supabase.from("team_members").select("project_category_id"),
         ]);
 
@@ -150,11 +157,12 @@ export function ProjectsLandingView() {
   }, []);
 
   const sortedCategories = useMemo(
-    () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
-    [categories],
+    () => sortProjectCategoriesByCreatedAt(categories, sortOrder),
+    [categories, sortOrder],
   );
 
   const handleDeleteRequest = (category: ProjectCategory) => {
+    setViewingCategory(null);
     setPendingDeleteCategory(category);
     setActionError(null);
   };
@@ -172,6 +180,7 @@ export function ProjectsLandingView() {
   };
 
   const handleEditCategoryRequest = (category: ProjectCategory) => {
+    setViewingCategory(null);
     setCategoryFormData(categoryToFormData(category));
     setCategoryFormErrors({});
     setEditingCategory(category);
@@ -230,13 +239,14 @@ export function ProjectsLandingView() {
         }
 
         setCategories((current) =>
-          current
-            .map((category) =>
+          sortProjectCategoriesByCreatedAt(
+            current.map((category) =>
               category.id === editingCategory.id
                 ? (data as ProjectCategory)
                 : category,
-            )
-            .sort((a, b) => a.name.localeCompare(b.name)),
+            ),
+            sortOrder,
+          ),
         );
         setActionSuccess(`${payload.name} was updated.`);
       } else {
@@ -253,8 +263,9 @@ export function ProjectsLandingView() {
         }
 
         setCategories((current) =>
-          [...current, data as ProjectCategory].sort((a, b) =>
-            a.name.localeCompare(b.name),
+          sortProjectCategoriesByCreatedAt(
+            [...current, data as ProjectCategory],
+            sortOrder,
           ),
         );
         setActionSuccess(`${payload.name} was added.`);
@@ -419,10 +430,31 @@ export function ProjectsLandingView() {
         {!loadError && !isLoading && sortedCategories.length > 0 ? (
           <>
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <p className="text-sm text-muted">
-                {sortedCategories.length}{" "}
-                {sortedCategories.length === 1 ? "project" : "projects"} available
-              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <p className="text-sm text-muted">
+                  {sortedCategories.length}{" "}
+                  {sortedCategories.length === 1 ? "project" : "projects"} available
+                </p>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="project-sort-order"
+                    className="text-xs font-semibold uppercase tracking-[0.12em] text-muted"
+                  >
+                    Sort
+                  </label>
+                  <select
+                    id="project-sort-order"
+                    value={sortOrder}
+                    onChange={(event) =>
+                      setSortOrder(event.target.value as ProjectCategorySortOrder)
+                    }
+                    className="interactive rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <option value="latest">Latest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -451,6 +483,7 @@ export function ProjectsLandingView() {
                     isEditing={editingCategoryId === category.id}
                     onEditRequest={handleEditCategoryRequest}
                     onDeleteRequest={handleDeleteRequest}
+                    onViewRequest={setViewingCategory}
                   />
                 </li>
               ))}
@@ -458,6 +491,18 @@ export function ProjectsLandingView() {
           </>
         ) : null}
       </main>
+
+      {viewingCategory ? (
+        <ProjectCategoryDetailModal
+          category={viewingCategory}
+          memberCount={memberCounts[viewingCategory.id] ?? 0}
+          isDeleting={deletingCategoryId === viewingCategory.id}
+          isEditing={editingCategoryId === viewingCategory.id}
+          onClose={() => setViewingCategory(null)}
+          onEdit={() => handleEditCategoryRequest(viewingCategory)}
+          onDelete={() => handleDeleteRequest(viewingCategory)}
+        />
+      ) : null}
 
       {categoryDialogMode ? (
         <CategoryFormDialog
