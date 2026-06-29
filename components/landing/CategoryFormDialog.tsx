@@ -79,7 +79,7 @@ export function CategoryFormDialog({
         >
           <div>
             <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium">
-              Category name <span className="text-danger">*</span>
+              Project name <span className="text-danger">*</span>
             </label>
             <input
               id="category-name"
@@ -129,6 +129,24 @@ export function CategoryFormDialog({
               className={inputClass(false)}
               disabled={isSaving}
             />
+          </div>
+
+          <div>
+            <label htmlFor="category-website-url" className="mb-1.5 block text-sm font-medium">
+              Website
+            </label>
+            <input
+              id="category-website-url"
+              name="category-website-url"
+              type="url"
+              value={formData.website_url}
+              onChange={(event) => onChange("website_url", event.target.value)}
+              placeholder="https://example.com"
+              className={inputClass(Boolean(errors.website_url))}
+              aria-invalid={Boolean(errors.website_url)}
+              disabled={isSaving}
+            />
+            <FieldError message={errors.website_url} />
           </div>
 
           <div className="flex flex-wrap justify-end gap-2 pt-1">

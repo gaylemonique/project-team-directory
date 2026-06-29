@@ -28,10 +28,10 @@ export function validateTeamMemberForm(
 
   if (data.project_category_id === ADD_NEW_CATEGORY) {
     if (!options?.newCategoryName?.trim()) {
-      errors.new_category_name = "Category name is required.";
+      errors.new_category_name = "Project name is required.";
     }
   } else if (!data.project_category_id) {
-    errors.project_category_id = "Project category is required.";
+    errors.project_category_id = "Project is required.";
   }
 
   if (data.profile_url.trim() && !isValidGitHubUrl(data.profile_url.trim())) {

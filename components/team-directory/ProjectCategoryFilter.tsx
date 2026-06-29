@@ -18,7 +18,7 @@ export function ProjectCategoryFilter({
         htmlFor="category-filter"
         className="text-xs font-semibold uppercase tracking-[0.14em] text-muted"
       >
-        Filter by project category
+        Filter by project
       </label>
       <select
         id="category-filter"

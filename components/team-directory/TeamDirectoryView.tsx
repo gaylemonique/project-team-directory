@@ -8,6 +8,7 @@ import { DirectoryLoadingSkeleton } from "@/components/team-directory/DirectoryL
 import { ProjectCategoryFilter } from "@/components/team-directory/ProjectCategoryFilter";
 import { TeamDirectoryHeader } from "@/components/team-directory/TeamDirectoryHeader";
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
+import { TeamMemberDetailModal } from "@/components/team-directory/TeamMemberDetailModal";
 import { TeamMemberForm } from "@/components/team-directory/TeamMemberForm";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
@@ -17,6 +18,9 @@ import {
   uploadTeamMemberPhoto,
   validatePhotoFile,
 } from "@/lib/supabase/storage";
+import {
+  sortProjectCategoriesByCreatedAt,
+} from "@/lib/team-directory/category-validation";
 import {
   formDataToPayload,
   memberToFormData,
@@ -63,6 +67,7 @@ export function TeamDirectoryView({
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [pendingDeleteMember, setPendingDeleteMember] =
     useState<TeamMember | null>(null);
+  const [viewingMember, setViewingMember] = useState<TeamMember | null>(null);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | undefined>();
@@ -307,15 +312,16 @@ export function TeamDirectoryView({
           throw new Error(
             getSupabaseErrorMessage(
               categoryError,
-              "Unable to create project category.",
+              "Unable to create project.",
             ),
           );
         }
 
         categoryId = createdCategory.id;
         setCategories((current) =>
-          [...current, createdCategory as ProjectCategory].sort((a, b) =>
-            a.name.localeCompare(b.name),
+          sortProjectCategoriesByCreatedAt(
+            [...current, createdCategory as ProjectCategory],
+            "latest",
           ),
         );
         setNewCategoryName("");
@@ -404,6 +410,7 @@ export function TeamDirectoryView({
   };
 
   const handleEdit = (member: TeamMember) => {
+    setViewingMember(null);
     revokePhotoObjectUrl();
     setEditingMemberId(member.id);
     setFormData(memberToFormData(member));
@@ -417,6 +424,7 @@ export function TeamDirectoryView({
   };
 
   const handleDeleteRequest = (member: TeamMember) => {
+    setViewingMember(null);
     setPendingDeleteMember(member);
     setActionError(null);
   };
@@ -598,12 +606,12 @@ export function TeamDirectoryView({
                 title={
                   members.length === 0
                     ? "No team members added yet."
-                    : "No members in this category."
+                    : "No members in this project."
                 }
                 description={
                   members.length === 0
                     ? "Create the first profile to start building the project directory."
-                    : "Try another category or add a profile for this project area."
+                    : "Try another project or add a profile for this project area."
                 }
               />
             ) : (
@@ -618,6 +626,7 @@ export function TeamDirectoryView({
                       index={index}
                       onEdit={handleEdit}
                       onDelete={handleDeleteRequest}
+                      onView={setViewingMember}
                       isDeleting={deletingMemberId === member.id}
                     />
                   </li>
@@ -648,6 +657,16 @@ export function TeamDirectoryView({
         </div>
         )}
       </main>
+
+      {viewingMember ? (
+        <TeamMemberDetailModal
+          member={viewingMember}
+          isDeleting={deletingMemberId === viewingMember.id}
+          onClose={() => setViewingMember(null)}
+          onEdit={() => handleEdit(viewingMember)}
+          onDelete={() => handleDeleteRequest(viewingMember)}
+        />
+      ) : null}
 
       {pendingDeleteMember ? (
         <div

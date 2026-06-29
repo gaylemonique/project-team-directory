@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CategoryFormDialog } from "@/components/landing/CategoryFormDialog";
 import { ProjectCategoryCard } from "@/components/landing/ProjectCategoryCard";
+import { ProjectCategoryDetailModal } from "@/components/landing/ProjectCategoryDetailModal";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   categoryToFormData,
   EMPTY_CATEGORY_FORM,
   formDataToCategoryPayload,
+  sortProjectCategoriesByCreatedAt,
   validateProjectCategoryForm,
   type ProjectCategoryFormData,
   type ProjectCategoryFormErrors,
+  type ProjectCategorySortOrder,
 } from "@/lib/team-directory/category-validation";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSupabaseErrorMessage } from "@/lib/supabase/errors";
@@ -61,6 +64,10 @@ export function ProjectsLandingView() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
   );
+  const [viewingCategory, setViewingCategory] = useState<ProjectCategory | null>(
+    null,
+  );
+  const [sortOrder, setSortOrder] = useState<ProjectCategorySortOrder>("latest");
 
   useEffect(() => {
     if (!actionSuccess) return;
@@ -89,7 +96,7 @@ export function ProjectsLandingView() {
       try {
         const supabase = getSupabaseClient();
         const [categoriesResult, membersResult] = await Promise.all([
-          supabase.from("project_categories").select("*").order("name"),
+          supabase.from("project_categories").select("*").order("created_at", { ascending: false }),
           supabase.from("team_members").select("project_category_id"),
         ]);
 
@@ -150,11 +157,12 @@ export function ProjectsLandingView() {
   }, []);
 
   const sortedCategories = useMemo(
-    () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
-    [categories],
+    () => sortProjectCategoriesByCreatedAt(categories, sortOrder),
+    [categories, sortOrder],
   );
 
   const handleDeleteRequest = (category: ProjectCategory) => {
+    setViewingCategory(null);
     setPendingDeleteCategory(category);
     setActionError(null);
   };
@@ -172,6 +180,7 @@ export function ProjectsLandingView() {
   };
 
   const handleEditCategoryRequest = (category: ProjectCategory) => {
+    setViewingCategory(null);
     setCategoryFormData(categoryToFormData(category));
     setCategoryFormErrors({});
     setEditingCategory(category);
@@ -225,18 +234,19 @@ export function ProjectsLandingView() {
 
         if (error) {
           throw new Error(
-            getSupabaseErrorMessage(error, "Unable to update project category."),
+            getSupabaseErrorMessage(error, "Unable to update project."),
           );
         }
 
         setCategories((current) =>
-          current
-            .map((category) =>
+          sortProjectCategoriesByCreatedAt(
+            current.map((category) =>
               category.id === editingCategory.id
                 ? (data as ProjectCategory)
                 : category,
-            )
-            .sort((a, b) => a.name.localeCompare(b.name)),
+            ),
+            sortOrder,
+          ),
         );
         setActionSuccess(`${payload.name} was updated.`);
       } else {
@@ -248,13 +258,14 @@ export function ProjectsLandingView() {
 
         if (error) {
           throw new Error(
-            getSupabaseErrorMessage(error, "Unable to create project category."),
+            getSupabaseErrorMessage(error, "Unable to create project."),
           );
         }
 
         setCategories((current) =>
-          [...current, data as ProjectCategory].sort((a, b) =>
-            a.name.localeCompare(b.name),
+          sortProjectCategoriesByCreatedAt(
+            [...current, data as ProjectCategory],
+            sortOrder,
           ),
         );
         setActionSuccess(`${payload.name} was added.`);
@@ -269,8 +280,8 @@ export function ProjectsLandingView() {
         error instanceof Error
           ? error.message
           : isEdit
-            ? "Unable to update project category."
-            : "Unable to create project category.",
+            ? "Unable to update project."
+            : "Unable to create project.",
       );
     } finally {
       setIsSavingCategory(false);
@@ -293,7 +304,7 @@ export function ProjectsLandingView() {
 
       if (error) {
         throw new Error(
-          getSupabaseErrorMessage(error, "Unable to delete project category."),
+          getSupabaseErrorMessage(error, "Unable to delete project."),
         );
       }
 
@@ -306,7 +317,7 @@ export function ProjectsLandingView() {
       setActionError(
         error instanceof Error
           ? error.message
-          : "Unable to delete project category.",
+          : "Unable to delete project.",
       );
     } finally {
       setDeletingCategoryId(null);
@@ -395,7 +406,7 @@ export function ProjectsLandingView() {
               No projects yet
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Add a project category to organize team profiles, or browse all
+              Add a project to organize team profiles, or browse all
               members across projects.
             </p>
             <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -404,7 +415,7 @@ export function ProjectsLandingView() {
                 onClick={handleAddCategoryOpen}
                 className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
               >
-                Add a category
+                Add a project
               </button>
               <Link
                 href="/team-directory"
@@ -419,17 +430,38 @@ export function ProjectsLandingView() {
         {!loadError && !isLoading && sortedCategories.length > 0 ? (
           <>
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <p className="text-sm text-muted">
-                {sortedCategories.length}{" "}
-                {sortedCategories.length === 1 ? "project" : "projects"} available
-              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <p className="text-sm text-muted">
+                  {sortedCategories.length}{" "}
+                  {sortedCategories.length === 1 ? "project" : "projects"} available
+                </p>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="project-sort-order"
+                    className="text-xs font-semibold uppercase tracking-[0.12em] text-muted"
+                  >
+                    Sort
+                  </label>
+                  <select
+                    id="project-sort-order"
+                    value={sortOrder}
+                    onChange={(event) =>
+                      setSortOrder(event.target.value as ProjectCategorySortOrder)
+                    }
+                    className="interactive rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <option value="latest">Latest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={handleAddCategoryOpen}
                   className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
                 >
-                  Add a category
+                  Add a project
                 </button>
                 <Link
                   href="/team-directory"
@@ -451,6 +483,7 @@ export function ProjectsLandingView() {
                     isEditing={editingCategoryId === category.id}
                     onEditRequest={handleEditCategoryRequest}
                     onDeleteRequest={handleDeleteRequest}
+                    onViewRequest={setViewingCategory}
                   />
                 </li>
               ))}
@@ -458,6 +491,18 @@ export function ProjectsLandingView() {
           </>
         ) : null}
       </main>
+
+      {viewingCategory ? (
+        <ProjectCategoryDetailModal
+          category={viewingCategory}
+          memberCount={memberCounts[viewingCategory.id] ?? 0}
+          isDeleting={deletingCategoryId === viewingCategory.id}
+          isEditing={editingCategoryId === viewingCategory.id}
+          onClose={() => setViewingCategory(null)}
+          onEdit={() => handleEditCategoryRequest(viewingCategory)}
+          onDelete={() => handleDeleteRequest(viewingCategory)}
+        />
+      ) : null}
 
       {categoryDialogMode ? (
         <CategoryFormDialog
@@ -488,7 +533,7 @@ export function ProjectsLandingView() {
               id="delete-category-dialog-title"
               className="font-display text-xl text-foreground"
             >
-              Delete project category
+              Delete project
             </h2>
             <p className="mt-2 text-sm text-muted">
               Are you sure you want to delete{" "}
@@ -502,7 +547,7 @@ export function ProjectsLandingView() {
                   {(memberCounts[pendingDeleteCategory.id] ?? 0) === 1
                     ? "1 profile"
                     : `${memberCounts[pendingDeleteCategory.id]} profiles`}{" "}
-                  in this category will become uncategorized.
+                  in this project will become unassigned.
                 </>
               ) : null}
             </p>
@@ -530,7 +575,7 @@ export function ProjectsLandingView() {
                     Deleting...
                   </>
                 ) : (
-                  "Delete category"
+                  "Delete project"
                 )}
               </button>
             </div>

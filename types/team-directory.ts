@@ -3,6 +3,7 @@ export type ProjectCategory = {
   name: string;
   description: string | null;
   team_lead: string | null;
+  website_url: string | null;
   created_at: string;
 };
 

@@ -9,6 +9,7 @@ type TeamMemberCardProps = {
   index: number;
   onEdit: (member: TeamMember) => void;
   onDelete: (member: TeamMember) => void;
+  onView: (member: TeamMember) => void;
   isDeleting: boolean;
 };
 
@@ -54,55 +55,68 @@ export function TeamMemberCard({
   index,
   onEdit,
   onDelete,
+  onView,
   isDeleting,
 }: TeamMemberCardProps) {
-  const categoryName = member.project_categories?.name ?? "Uncategorized";
+  const categoryName = member.project_categories?.name ?? "Unassigned";
 
   return (
     <article
       className={[
-        "group card-lift flex h-full flex-col rounded-lg border border-border bg-surface p-4 animate-fade-in-up",
+        "group card-lift flex h-full flex-col rounded-lg border border-border bg-surface animate-fade-in-up",
         isDeleting ? "pointer-events-none opacity-50" : "",
       ].join(" ")}
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <div className="flex gap-3">
-        <MemberAvatar member={member} />
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate font-display text-lg leading-tight text-foreground">
-            {member.name}
-          </h3>
-          <p className="mt-0.5 truncate text-sm text-muted">{member.role}</p>
-          <p className="mt-2 inline-flex max-w-full rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
-            <span className="truncate">{categoryName}</span>
-          </p>
+      <button
+        type="button"
+        onClick={() => onView(member)}
+        disabled={isDeleting}
+        className="interactive flex flex-1 flex-col p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30"
+      >
+        <div className="flex gap-3">
+          <MemberAvatar member={member} />
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate font-display text-lg leading-tight text-foreground group-hover:text-accent">
+              {member.name}
+            </h3>
+            <p className="mt-0.5 truncate text-sm text-muted">{member.role}</p>
+            <p className="mt-2 inline-flex max-w-full rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+              <span className="truncate">{categoryName}</span>
+            </p>
+          </div>
         </div>
-      </div>
 
-      <dl className="mt-4 grid flex-1 gap-3">
-        {member.project_assignment ? (
-          <DetailRow label="Project assignment" value={member.project_assignment} />
-        ) : null}
-        {member.favorite_stack ? (
-          <DetailRow label="Favorite stack" value={member.favorite_stack} />
-        ) : null}
-        {member.current_focus ? (
-          <DetailRow label="Current focus" value={member.current_focus} />
-        ) : null}
-        {member.learning_goal ? (
-          <DetailRow label="Learning goal" value={member.learning_goal} />
-        ) : null}
-        {member.fun_fact ? (
-          <DetailRow label="Fun fact" value={member.fun_fact} />
-        ) : null}
-      </dl>
+        <dl className="mt-4 grid flex-1 gap-3">
+          {member.project_assignment ? (
+            <DetailRow label="Project assignment" value={member.project_assignment} />
+          ) : null}
+          {member.favorite_stack ? (
+            <DetailRow label="Favorite stack" value={member.favorite_stack} />
+          ) : null}
+          {member.current_focus ? (
+            <DetailRow label="Current focus" value={member.current_focus} />
+          ) : null}
+          {member.learning_goal ? (
+            <DetailRow label="Learning goal" value={member.learning_goal} />
+          ) : null}
+          {member.fun_fact ? (
+            <DetailRow label="Fun fact" value={member.fun_fact} />
+          ) : null}
+        </dl>
 
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+        <p className="interactive mt-4 text-sm font-medium text-accent">
+          View details →
+        </p>
+      </button>
+
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 pb-4 pt-0">
         {member.profile_url ? (
           <a
             href={member.profile_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(event) => event.stopPropagation()}
             className="interactive rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:border-border-strong hover:bg-surface-muted"
           >
             View GitHub profile

@@ -9,7 +9,11 @@ export function getSupabaseErrorMessage(
   fallback: string,
 ): string {
   if (error.code === "PGRST116") {
-    return "This profile could not be saved because the update was blocked. Check Supabase row-level security policies for team_members.";
+    return "This change could not be saved because the update was blocked. Check Supabase row-level security policies.";
+  }
+
+  if (error.code === "23505") {
+    return "That name is already in use. Choose a different project name.";
   }
 
   if (error.code === "42501") {

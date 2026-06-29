@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { formatWebsiteLabel } from "@/lib/team-directory/category-validation";
 import type { ProjectCategory } from "@/types/team-directory";
 
 type ProjectCategoryCardProps = {
@@ -11,6 +11,7 @@ type ProjectCategoryCardProps = {
   isEditing: boolean;
   onEditRequest: (category: ProjectCategory) => void;
   onDeleteRequest: (category: ProjectCategory) => void;
+  onViewRequest: (category: ProjectCategory) => void;
 };
 
 export function ProjectCategoryCard({
@@ -21,6 +22,7 @@ export function ProjectCategoryCard({
   isEditing,
   onEditRequest,
   onDeleteRequest,
+  onViewRequest,
 }: ProjectCategoryCardProps) {
   const isBusy = isDeleting || isEditing;
   return (
@@ -31,9 +33,11 @@ export function ProjectCategoryCard({
       ].join(" ")}
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <Link
-        href={`/projects/${category.id}`}
-        className="flex flex-1 flex-col p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30"
+      <button
+        type="button"
+        onClick={() => onViewRequest(category)}
+        disabled={isBusy}
+        className="interactive flex flex-1 flex-col p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30"
       >
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-display text-xl leading-tight text-foreground group-hover:text-accent">
@@ -61,10 +65,18 @@ export function ProjectCategoryCard({
           </p>
         ) : null}
 
+        {category.website_url ? (
+          <p className="mt-3 truncate text-sm text-accent">
+            {formatWebsiteLabel(category.website_url)}
+          </p>
+        ) : (
+          <p className="mt-3 text-sm text-placeholder">No website link yet.</p>
+        )}
+
         <p className="interactive mt-5 text-sm font-medium text-accent">
-          View team →
+          View details →
         </p>
-      </Link>
+      </button>
 
       <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3">
         <button
@@ -73,7 +85,7 @@ export function ProjectCategoryCard({
           disabled={isBusy}
           className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isEditing ? "Saving..." : "Edit category"}
+          {isEditing ? "Saving..." : "Edit project"}
         </button>
         <button
           type="button"
@@ -81,7 +93,7 @@ export function ProjectCategoryCard({
           disabled={isBusy}
           className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isDeleting ? "Deleting..." : "Delete category"}
+          {isDeleting ? "Deleting..." : "Delete project"}
         </button>
       </div>
     </article>
