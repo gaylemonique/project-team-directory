@@ -32,7 +32,7 @@ export function validateProjectCategoryForm(
   const errors: ProjectCategoryFormErrors = {};
 
   if (!data.name.trim()) {
-    errors.name = "Category name is required.";
+    errors.name = "Project name is required.";
   }
 
   return errors;

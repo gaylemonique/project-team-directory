@@ -79,7 +79,7 @@ export function CategoryFormDialog({
         >
           <div>
             <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium">
-              Category name <span className="text-danger">*</span>
+              Project name <span className="text-danger">*</span>
             </label>
             <input
               id="category-name"

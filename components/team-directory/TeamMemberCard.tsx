@@ -56,7 +56,7 @@ export function TeamMemberCard({
   onDelete,
   isDeleting,
 }: TeamMemberCardProps) {
-  const categoryName = member.project_categories?.name ?? "Uncategorized";
+  const categoryName = member.project_categories?.name ?? "Unassigned";
 
   return (
     <article

@@ -225,7 +225,7 @@ export function ProjectsLandingView() {
 
         if (error) {
           throw new Error(
-            getSupabaseErrorMessage(error, "Unable to update project category."),
+            getSupabaseErrorMessage(error, "Unable to update project."),
           );
         }
 
@@ -248,7 +248,7 @@ export function ProjectsLandingView() {
 
         if (error) {
           throw new Error(
-            getSupabaseErrorMessage(error, "Unable to create project category."),
+            getSupabaseErrorMessage(error, "Unable to create project."),
           );
         }
 
@@ -269,8 +269,8 @@ export function ProjectsLandingView() {
         error instanceof Error
           ? error.message
           : isEdit
-            ? "Unable to update project category."
-            : "Unable to create project category.",
+            ? "Unable to update project."
+            : "Unable to create project.",
       );
     } finally {
       setIsSavingCategory(false);
@@ -293,7 +293,7 @@ export function ProjectsLandingView() {
 
       if (error) {
         throw new Error(
-          getSupabaseErrorMessage(error, "Unable to delete project category."),
+          getSupabaseErrorMessage(error, "Unable to delete project."),
         );
       }
 
@@ -306,7 +306,7 @@ export function ProjectsLandingView() {
       setActionError(
         error instanceof Error
           ? error.message
-          : "Unable to delete project category.",
+          : "Unable to delete project.",
       );
     } finally {
       setDeletingCategoryId(null);
@@ -395,7 +395,7 @@ export function ProjectsLandingView() {
               No projects yet
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Add a project category to organize team profiles, or browse all
+              Add a project to organize team profiles, or browse all
               members across projects.
             </p>
             <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -404,7 +404,7 @@ export function ProjectsLandingView() {
                 onClick={handleAddCategoryOpen}
                 className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
               >
-                Add a category
+                Add a project
               </button>
               <Link
                 href="/team-directory"
@@ -429,7 +429,7 @@ export function ProjectsLandingView() {
                   onClick={handleAddCategoryOpen}
                   className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
                 >
-                  Add a category
+                  Add a project
                 </button>
                 <Link
                   href="/team-directory"
@@ -488,7 +488,7 @@ export function ProjectsLandingView() {
               id="delete-category-dialog-title"
               className="font-display text-xl text-foreground"
             >
-              Delete project category
+              Delete project
             </h2>
             <p className="mt-2 text-sm text-muted">
               Are you sure you want to delete{" "}
@@ -502,7 +502,7 @@ export function ProjectsLandingView() {
                   {(memberCounts[pendingDeleteCategory.id] ?? 0) === 1
                     ? "1 profile"
                     : `${memberCounts[pendingDeleteCategory.id]} profiles`}{" "}
-                  in this category will become uncategorized.
+                  in this project will become unassigned.
                 </>
               ) : null}
             </p>
@@ -530,7 +530,7 @@ export function ProjectsLandingView() {
                     Deleting...
                   </>
                 ) : (
-                  "Delete category"
+                  "Delete project"
                 )}
               </button>
             </div>

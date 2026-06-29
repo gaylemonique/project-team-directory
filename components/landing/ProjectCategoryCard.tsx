@@ -73,7 +73,7 @@ export function ProjectCategoryCard({
           disabled={isBusy}
           className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isEditing ? "Saving..." : "Edit category"}
+          {isEditing ? "Saving..." : "Edit project"}
         </button>
         <button
           type="button"
@@ -81,7 +81,7 @@ export function ProjectCategoryCard({
           disabled={isBusy}
           className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isDeleting ? "Deleting..." : "Delete category"}
+          {isDeleting ? "Deleting..." : "Delete project"}
         </button>
       </div>
     </article>

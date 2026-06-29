@@ -180,7 +180,7 @@ export function TeamMemberForm({
             htmlFor="project_category_id"
             className="mb-1.5 block text-sm font-medium"
           >
-            Project category <span className="text-danger">*</span>
+            Project <span className="text-danger">*</span>
           </label>
           {lockCategory && lockedCategoryName ? (
             <div className="rounded-md border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground">
@@ -197,13 +197,13 @@ export function TeamMemberForm({
               className={inputClass(Boolean(errors.project_category_id))}
               aria-invalid={Boolean(errors.project_category_id)}
             >
-              <option value="">Select a category</option>
+              <option value="">Select a project</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
-              <option value={ADD_NEW_CATEGORY}>Add new category...</option>
+              <option value={ADD_NEW_CATEGORY}>Add new project...</option>
             </select>
           )}
           <FieldError message={errors.project_category_id} />
@@ -213,7 +213,7 @@ export function TeamMemberForm({
                 htmlFor="new_category_name"
                 className="mb-1.5 block text-sm font-medium"
               >
-                New category name <span className="text-danger">*</span>
+                New project name <span className="text-danger">*</span>
               </label>
               <input
                 id="new_category_name"

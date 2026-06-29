@@ -207,7 +207,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
 
       if (error) {
         throw new Error(
-          getSupabaseErrorMessage(error, "Unable to update project category."),
+          getSupabaseErrorMessage(error, "Unable to update project."),
         );
       }
 
@@ -220,7 +220,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
       setActionError(
         error instanceof Error
           ? error.message
-          : "Unable to update project category.",
+          : "Unable to update project.",
       );
     } finally {
       setIsSavingCategory(false);

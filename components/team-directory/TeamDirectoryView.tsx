@@ -307,7 +307,7 @@ export function TeamDirectoryView({
           throw new Error(
             getSupabaseErrorMessage(
               categoryError,
-              "Unable to create project category.",
+              "Unable to create project.",
             ),
           );
         }
@@ -598,12 +598,12 @@ export function TeamDirectoryView({
                 title={
                   members.length === 0
                     ? "No team members added yet."
-                    : "No members in this category."
+                    : "No members in this project."
                 }
                 description={
                   members.length === 0
                     ? "Create the first profile to start building the project directory."
-                    : "Try another category or add a profile for this project area."
+                    : "Try another project or add a profile for this project area."
                 }
               />
             ) : (
