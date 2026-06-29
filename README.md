@@ -31,3 +31,24 @@ npm run verify:supabase
 ## Requirements
 
 See [PRD_Project_Team_Directory.md](PRD_Project_Team_Directory.md) for the full product specification.
+
+## Submit a pull request
+
+1. Ensure checks pass locally:
+
+```bash
+npm run lint
+npm run build
+npm run verify:supabase
+```
+
+2. Push your branch:
+
+```bash
+git push -u origin feature/project-team-directory
+```
+
+3. Open a PR on GitHub:
+   - [Compare `feature/project-team-directory` → `main`](https://github.com/gaylemonique/project-team-directory/compare/main...feature/project-team-directory?expand=1)
+   - If `main` does not exist yet, create it in GitHub **Settings → Branches** or when prompted during PR creation.
+   - Use [PR_BODY.md](PR_BODY.md) as the PR description starting point.
