@@ -21,6 +21,7 @@ Visit [http://localhost:3000/team-directory](http://localhost:3000/team-director
 npm run dev
 npm run lint
 npm run build
+npm run verify:supabase
 ```
 
 ## Route
