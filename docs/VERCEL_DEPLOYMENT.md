@@ -44,7 +44,7 @@ npx vercel env pull .env.local
 
 ## Verify production
 
-1. Open https://project-team-directory.vercel.app/team-directory
+1. Open https://project-team-directory.vercel.app
 2. Categories should load (not stuck on "Loading team directory...")
 3. Create a profile and upload a photo
 

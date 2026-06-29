@@ -338,7 +338,7 @@ export function TeamMemberForm({
             htmlFor="profile_url"
             className="mb-1.5 block text-sm font-medium"
           >
-            GitHub or LinkedIn profile URL
+            GitHub profile URL
           </label>
           <input
             id="profile_url"

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { TeamDirectoryView } from "@/components/team-directory/TeamDirectoryView";
 
 export default function Home() {
-  redirect("/team-directory");
+  return <TeamDirectoryView />;
 }
