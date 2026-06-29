@@ -8,6 +8,8 @@ type ProjectCategoryCardProps = {
   memberCount: number;
   index: number;
   isDeleting: boolean;
+  isEditing: boolean;
+  onEditRequest: (category: ProjectCategory) => void;
   onDeleteRequest: (category: ProjectCategory) => void;
 };
 
@@ -16,13 +18,16 @@ export function ProjectCategoryCard({
   memberCount,
   index,
   isDeleting,
+  isEditing,
+  onEditRequest,
   onDeleteRequest,
 }: ProjectCategoryCardProps) {
+  const isBusy = isDeleting || isEditing;
   return (
     <article
       className={[
         "group card-lift flex h-full flex-col rounded-lg border border-border bg-surface animate-fade-in-up",
-        isDeleting ? "pointer-events-none opacity-50" : "",
+        isBusy ? "pointer-events-none opacity-50" : "",
       ].join(" ")}
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
@@ -61,11 +66,19 @@ export function ProjectCategoryCard({
         </p>
       </Link>
 
-      <div className="border-t border-border px-5 py-3">
+      <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3">
+        <button
+          type="button"
+          onClick={() => onEditRequest(category)}
+          disabled={isBusy}
+          className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isEditing ? "Saving..." : "Edit category"}
+        </button>
         <button
           type="button"
           onClick={() => onDeleteRequest(category)}
-          disabled={isDeleting}
+          disabled={isBusy}
           className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isDeleting ? "Deleting..." : "Delete category"}
