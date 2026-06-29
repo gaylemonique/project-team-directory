@@ -10,7 +10,7 @@ import {
   categoryToFormData,
   EMPTY_CATEGORY_FORM,
   formDataToCategoryPayload,
-  sortProjectCategoriesByCreatedAt,
+  sortProjectCategoriesByUpdatedAt,
   validateProjectCategoryForm,
   type ProjectCategoryFormData,
   type ProjectCategoryFormErrors,
@@ -96,7 +96,7 @@ export function ProjectsLandingView() {
       try {
         const supabase = getSupabaseClient();
         const [categoriesResult, membersResult] = await Promise.all([
-          supabase.from("project_categories").select("*").order("created_at", { ascending: false }),
+          supabase.from("project_categories").select("*").order("updated_at", { ascending: false }),
           supabase.from("team_members").select("project_category_id"),
         ]);
 
@@ -157,7 +157,7 @@ export function ProjectsLandingView() {
   }, []);
 
   const sortedCategories = useMemo(
-    () => sortProjectCategoriesByCreatedAt(categories, sortOrder),
+    () => sortProjectCategoriesByUpdatedAt(categories, sortOrder),
     [categories, sortOrder],
   );
 
@@ -239,7 +239,7 @@ export function ProjectsLandingView() {
         }
 
         setCategories((current) =>
-          sortProjectCategoriesByCreatedAt(
+          sortProjectCategoriesByUpdatedAt(
             current.map((category) =>
               category.id === editingCategory.id
                 ? (data as ProjectCategory)
@@ -263,7 +263,7 @@ export function ProjectsLandingView() {
         }
 
         setCategories((current) =>
-          sortProjectCategoriesByCreatedAt(
+          sortProjectCategoriesByUpdatedAt(
             [...current, data as ProjectCategory],
             sortOrder,
           ),
@@ -337,7 +337,7 @@ export function ProjectsLandingView() {
                 Choose a project
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-                Start with the project area you belong to, then browse profiles
+                Start with the project area you belong to, then browse members
                 or add your own to the directory.
               </p>
             </div>
@@ -356,7 +356,7 @@ export function ProjectsLandingView() {
                 {totalMembers > 0 ? (
                   <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-center">
                     <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-                      Profiles
+                      Members
                     </dt>
                     <dd className="mt-1 font-display text-2xl text-foreground">
                       {totalMembers}
@@ -406,7 +406,7 @@ export function ProjectsLandingView() {
               No projects yet
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Add a project to organize team profiles, or browse all
+              Add a project to organize team members, or browse all
               members across projects.
             </p>
             <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -450,8 +450,8 @@ export function ProjectsLandingView() {
                     }
                     className="interactive rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                   >
-                    <option value="latest">Latest first</option>
-                    <option value="oldest">Oldest first</option>
+                    <option value="latest">Latest edited or added</option>
+                    <option value="oldest">Oldest edited or added</option>
                   </select>
                 </div>
               </div>
@@ -496,11 +496,7 @@ export function ProjectsLandingView() {
         <ProjectCategoryDetailModal
           category={viewingCategory}
           memberCount={memberCounts[viewingCategory.id] ?? 0}
-          isDeleting={deletingCategoryId === viewingCategory.id}
-          isEditing={editingCategoryId === viewingCategory.id}
           onClose={() => setViewingCategory(null)}
-          onEdit={() => handleEditCategoryRequest(viewingCategory)}
-          onDelete={() => handleDeleteRequest(viewingCategory)}
         />
       ) : null}
 
@@ -545,8 +541,8 @@ export function ProjectsLandingView() {
                 <>
                   {" "}
                   {(memberCounts[pendingDeleteCategory.id] ?? 0) === 1
-                    ? "1 profile"
-                    : `${memberCounts[pendingDeleteCategory.id]} profiles`}{" "}
+                    ? "1 member"
+                    : `${memberCounts[pendingDeleteCategory.id]} members`}{" "}
                   in this project will become unassigned.
                 </>
               ) : null}

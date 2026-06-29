@@ -1,6 +1,5 @@
 "use client";
 
-import { formatWebsiteLabel } from "@/lib/team-directory/category-validation";
 import type { ProjectCategory } from "@/types/team-directory";
 
 type ProjectCategoryCardProps = {
@@ -44,7 +43,7 @@ export function ProjectCategoryCard({
             {category.name}
           </h2>
           <span className="shrink-0 rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-semibold tabular-nums text-muted">
-            {memberCount} {memberCount === 1 ? "profile" : "profiles"}
+            {memberCount} {memberCount === 1 ? "member" : "members"}
           </span>
         </div>
 
@@ -65,14 +64,6 @@ export function ProjectCategoryCard({
           </p>
         ) : null}
 
-        {category.website_url ? (
-          <p className="mt-3 truncate text-sm text-accent">
-            {formatWebsiteLabel(category.website_url)}
-          </p>
-        ) : (
-          <p className="mt-3 text-sm text-placeholder">No website link yet.</p>
-        )}
-
         <p className="interactive mt-5 text-sm font-medium text-accent">
           View details →
         </p>
@@ -87,6 +78,16 @@ export function ProjectCategoryCard({
         >
           {isEditing ? "Saving..." : "Edit project"}
         </button>
+        {category.website_url ? (
+          <a
+            href={category.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="interactive rounded-md border border-accent/30 bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent hover:border-accent/50 hover:bg-accent-soft/80"
+          >
+            View project link
+          </a>
+        ) : null}
         <button
           type="button"
           onClick={() => onDeleteRequest(category)}

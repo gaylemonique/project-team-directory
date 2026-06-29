@@ -6,19 +6,22 @@ import { getInitials } from "@/lib/team-directory/validation";
 
 type TeamMemberDetailModalProps = {
   member: TeamMember;
-  isDeleting: boolean;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
 };
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
         {label}
       </dt>
-      <dd className="mt-1 break-words text-sm text-foreground">{value}</dd>
+      <dd className="mt-1 break-words text-sm text-foreground">{children}</dd>
     </div>
   );
 }
@@ -32,7 +35,7 @@ function ModalAvatar({ member }: { member: TeamMember }) {
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={member.photo_url!}
-        alt={`${member.name} profile photo`}
+        alt={`${member.name} member photo`}
         className="h-20 w-20 shrink-0 rounded-md border border-border object-cover"
         onError={() => setImageError(true)}
       />
@@ -51,10 +54,7 @@ function ModalAvatar({ member }: { member: TeamMember }) {
 
 export function TeamMemberDetailModal({
   member,
-  isDeleting,
   onClose,
-  onEdit,
-  onDelete,
 }: TeamMemberDetailModalProps) {
   const categoryName = member.project_categories?.name ?? "Unassigned";
 
@@ -102,19 +102,19 @@ export function TeamMemberDetailModal({
 
         <dl className="mt-6 grid gap-4">
           {member.project_assignment ? (
-            <DetailRow label="Project assignment" value={member.project_assignment} />
+            <DetailRow label="Project assignment">{member.project_assignment}</DetailRow>
           ) : null}
           {member.favorite_stack ? (
-            <DetailRow label="Favorite stack" value={member.favorite_stack} />
+            <DetailRow label="Favorite stack">{member.favorite_stack}</DetailRow>
           ) : null}
           {member.current_focus ? (
-            <DetailRow label="Current focus" value={member.current_focus} />
+            <DetailRow label="Current focus">{member.current_focus}</DetailRow>
           ) : null}
           {member.learning_goal ? (
-            <DetailRow label="Learning goal" value={member.learning_goal} />
+            <DetailRow label="Learning goal">{member.learning_goal}</DetailRow>
           ) : null}
           {member.fun_fact ? (
-            <DetailRow label="Fun fact" value={member.fun_fact} />
+            <DetailRow label="Fun fact">{member.fun_fact}</DetailRow>
           ) : null}
           {!member.project_assignment &&
           !member.favorite_stack &&
@@ -122,39 +122,10 @@ export function TeamMemberDetailModal({
           !member.learning_goal &&
           !member.fun_fact ? (
             <p className="text-sm text-placeholder">
-              No additional profile details yet.
+              No additional member details yet.
             </p>
           ) : null}
         </dl>
-
-        <div className="mt-6 flex flex-wrap gap-2 border-t border-border pt-5">
-          {member.profile_url ? (
-            <a
-              href={member.profile_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="interactive inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-            >
-              View GitHub profile
-            </a>
-          ) : null}
-          <button
-            type="button"
-            onClick={onEdit}
-            disabled={isDeleting}
-            className="interactive inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Edit profile
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="interactive inline-flex min-h-10 items-center justify-center rounded-md border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDeleting ? "Deleting..." : "Delete profile"}
-          </button>
-        </div>
       </div>
     </div>
   );

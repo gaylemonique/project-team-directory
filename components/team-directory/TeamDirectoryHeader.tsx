@@ -26,7 +26,7 @@ export function TeamDirectoryHeader({
               Project Team Directory
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-              Introduce yourself under your project. Add profiles, keep
+              Introduce yourself under your project. Add members, keep
               them current, and browse who is working on what.
             </p>
           </div>
@@ -37,7 +37,7 @@ export function TeamDirectoryHeader({
               {memberCount > 0 ? (
                 <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-center">
                   <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-                    Profiles
+                    Members
                   </dt>
                   <dd className="mt-1 font-display text-2xl text-foreground">
                     {memberCount}

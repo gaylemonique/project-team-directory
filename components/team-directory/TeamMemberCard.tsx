@@ -33,7 +33,7 @@ function MemberAvatar({ member }: { member: TeamMember }) {
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={member.photo_url!}
-        alt={`${member.name} profile photo`}
+        alt={`${member.name} member photo`}
         className="h-14 w-14 shrink-0 rounded-md border border-border object-cover transition-transform duration-300 group-hover:scale-[1.02]"
         onError={() => setImageError(true)}
       />

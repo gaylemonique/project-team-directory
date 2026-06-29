@@ -5,6 +5,7 @@ export type ProjectCategory = {
   team_lead: string | null;
   website_url: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type TeamMember = {

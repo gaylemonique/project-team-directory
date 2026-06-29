@@ -33,14 +33,14 @@ function SavingLabel({
   hasPhotoUpload: boolean;
 }) {
   if (!isSaving) {
-    return isEditing ? "Save changes" : "Create profile";
+    return isEditing ? "Save changes" : "Create member";
   }
 
   if (hasPhotoUpload) {
     return isEditing ? "Uploading and saving..." : "Uploading and creating...";
   }
 
-  return isEditing ? "Saving changes..." : "Creating profile...";
+  return isEditing ? "Saving changes..." : "Creating member...";
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -104,14 +104,14 @@ export function TeamMemberForm({
         <div>
           {isEditing ? (
             <p className="mb-2 inline-flex rounded-full bg-accent-soft px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent">
-              Editing profile
+              Editing member
             </p>
           ) : null}
           <h2
             id="member-form-heading"
             className="font-display text-xl text-foreground"
           >
-            {isEditing ? "Edit team member" : "Member profile"}
+            {isEditing ? "Edit team member" : "Team member"}
           </h2>
           <p className="mt-1 text-sm text-muted">
             Required fields are marked with{" "}
@@ -231,14 +231,14 @@ export function TeamMemberForm({
         </div>
 
         <div className="sm:col-span-2">
-          <span className="mb-1.5 block text-sm font-medium">Profile photo</span>
+          <span className="mb-1.5 block text-sm font-medium">Member photo</span>
           <div className="rounded-md border border-border bg-surface p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {photoPreviewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={photoPreviewUrl}
-                  alt="Selected profile photo preview"
+                  alt="Selected member photo preview"
                   className="h-20 w-20 shrink-0 rounded-md border border-border object-cover transition-all duration-300"
                 />
               ) : (

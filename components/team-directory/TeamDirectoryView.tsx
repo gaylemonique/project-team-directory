@@ -19,7 +19,7 @@ import {
   validatePhotoFile,
 } from "@/lib/supabase/storage";
 import {
-  sortProjectCategoriesByCreatedAt,
+  sortProjectCategoriesByUpdatedAt,
 } from "@/lib/team-directory/category-validation";
 import {
   formDataToPayload,
@@ -319,7 +319,7 @@ export function TeamDirectoryView({
 
         categoryId = createdCategory.id;
         setCategories((current) =>
-          sortProjectCategoriesByCreatedAt(
+          sortProjectCategoriesByUpdatedAt(
             [...current, createdCategory as ProjectCategory],
             "latest",
           ),
@@ -373,7 +373,7 @@ export function TeamDirectoryView({
           return;
         }
 
-        showSuccess(`${payload.name}'s profile was updated.`);
+        showSuccess(`${payload.name}'s member was updated.`);
         resetForm();
       } else {
         const { data, error } = await supabase
@@ -402,7 +402,7 @@ export function TeamDirectoryView({
       const message =
         error instanceof Error
           ? error.message
-          : "Unable to save team member profile.";
+          : "Unable to save team member.";
       setActionError(message);
     } finally {
       setIsSaving(false);
@@ -448,7 +448,7 @@ export function TeamDirectoryView({
 
       if (error) {
         throw new Error(
-          getSupabaseErrorMessage(error, "Unable to delete team member profile."),
+          getSupabaseErrorMessage(error, "Unable to delete team member."),
         );
       }
 
@@ -463,7 +463,7 @@ export function TeamDirectoryView({
         current.filter((member) => member.id !== pendingDeleteMember.id),
       );
 
-      showSuccess(`${pendingDeleteMember.name}'s profile was deleted.`);
+      showSuccess(`${pendingDeleteMember.name}'s member was deleted.`);
 
       if (editingMemberId === pendingDeleteMember.id) {
         resetForm();
@@ -474,7 +474,7 @@ export function TeamDirectoryView({
       const message =
         error instanceof Error
           ? error.message
-          : "Unable to delete team member profile.";
+          : "Unable to delete team member.";
       setActionError(message);
     } finally {
       setDeletingMemberId(null);
@@ -503,7 +503,7 @@ export function TeamDirectoryView({
               </Link>
             ) : null}
             <h1 className="font-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-              {editingMemberId ? "Edit member profile" : "Create member profile"}
+              {editingMemberId ? "Edit member" : "Create member"}
             </h1>
             {lockedCategory ? (
               <p className="mt-2 text-sm text-muted">
@@ -610,8 +610,8 @@ export function TeamDirectoryView({
                 }
                 description={
                   members.length === 0
-                    ? "Create the first profile to start building the project directory."
-                    : "Try another project or add a profile for this project area."
+                    ? "Create the first member to start building the project directory."
+                    : "Try another project or add a member for this project area."
                 }
               />
             ) : (
@@ -661,10 +661,7 @@ export function TeamDirectoryView({
       {viewingMember ? (
         <TeamMemberDetailModal
           member={viewingMember}
-          isDeleting={deletingMemberId === viewingMember.id}
           onClose={() => setViewingMember(null)}
-          onEdit={() => handleEdit(viewingMember)}
-          onDelete={() => handleDeleteRequest(viewingMember)}
         />
       ) : null}
 
@@ -685,10 +682,10 @@ export function TeamDirectoryView({
               id="delete-dialog-title"
               className="font-display text-lg text-foreground"
             >
-              Delete profile
+              Delete member
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Are you sure you want to delete this team member profile?
+              Are you sure you want to delete this team member?
             </p>
             <p className="mt-3 rounded-md bg-surface-muted px-3 py-2 text-sm text-foreground">
               {pendingDeleteMember.name}
@@ -717,7 +714,7 @@ export function TeamDirectoryView({
                     Deleting...
                   </>
                 ) : (
-                  "Delete profile"
+                  "Delete member"
                 )}
               </button>
             </div>

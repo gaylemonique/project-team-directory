@@ -37,16 +37,18 @@ export function formatWebsiteLabel(url: string): string {
 
 export type ProjectCategorySortOrder = "latest" | "oldest";
 
-export function sortProjectCategoriesByCreatedAt(
+function getProjectActivityTime(category: ProjectCategory): number {
+  const value = category.updated_at ?? category.created_at;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+export function sortProjectCategoriesByUpdatedAt(
   categories: ProjectCategory[],
   order: ProjectCategorySortOrder = "latest",
 ): ProjectCategory[] {
   return [...categories].sort((a, b) => {
-    const aTime = new Date(a.created_at).getTime();
-    const bTime = new Date(b.created_at).getTime();
-    const safeATime = Number.isNaN(aTime) ? 0 : aTime;
-    const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
-    const timeDiff = safeBTime - safeATime;
+    const timeDiff = getProjectActivityTime(b) - getProjectActivityTime(a);
 
     if (timeDiff !== 0) {
       return order === "latest" ? timeDiff : -timeDiff;
@@ -89,5 +91,6 @@ export function formDataToCategoryPayload(data: ProjectCategoryFormData) {
     description: data.description.trim() || null,
     team_lead: data.team_lead.trim() || null,
     website_url: data.website_url.trim() || null,
+    updated_at: new Date().toISOString(),
   };
 }

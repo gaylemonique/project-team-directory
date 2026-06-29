@@ -45,7 +45,7 @@ export function CategoryFormDialog({
   const title = mode === "add" ? "Add a project" : "Edit project";
   const description =
     mode === "add"
-      ? "Create a new project area for organizing team member profiles."
+      ? "Create a new project area for organizing team members."
       : "Update this project area's details.";
   const submitLabel = mode === "add" ? "Add project" : "Save changes";
   const savingLabel = mode === "add" ? "Adding..." : "Saving...";

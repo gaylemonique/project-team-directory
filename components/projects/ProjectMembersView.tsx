@@ -247,7 +247,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
 
       if (error) {
         throw new Error(
-          getSupabaseErrorMessage(error, "Unable to delete team member profile."),
+          getSupabaseErrorMessage(error, "Unable to delete team member."),
         );
       }
 
@@ -261,13 +261,13 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
       setMembers((current) =>
         current.filter((member) => member.id !== pendingDeleteMember.id),
       );
-      setActionSuccess(`${pendingDeleteMember.name}'s profile was deleted.`);
+      setActionSuccess(`${pendingDeleteMember.name}'s member was deleted.`);
       setPendingDeleteMember(null);
     } catch (error) {
       setActionError(
         error instanceof Error
           ? error.message
-          : "Unable to delete team member profile.",
+          : "Unable to delete team member.",
       );
     } finally {
       setDeletingMemberId(null);
@@ -366,7 +366,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
         {!isLoading && !loadError && category && members.length === 0 ? (
           <EmptyState
             title="No members in this project yet."
-            description="Be the first to add a profile for this project area."
+            description="Be the first to add a member for this project area."
           />
         ) : null}
 
@@ -402,10 +402,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
       {viewingMember ? (
         <TeamMemberDetailModal
           member={viewingMember}
-          isDeleting={deletingMemberId === viewingMember.id}
           onClose={() => setViewingMember(null)}
-          onEdit={() => handleEdit(viewingMember)}
-          onDelete={() => handleDeleteRequest(viewingMember)}
         />
       ) : null}
 
@@ -438,14 +435,14 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
               id="delete-dialog-title"
               className="font-display text-xl text-foreground"
             >
-              Delete profile
+              Delete member
             </h2>
             <p className="mt-2 text-sm text-muted">
               Are you sure you want to delete{" "}
               <span className="font-medium text-foreground">
                 {pendingDeleteMember.name}
               </span>
-              &apos;s profile?
+              &apos;s member?
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
@@ -462,7 +459,7 @@ export function ProjectMembersView({ categoryId }: ProjectMembersViewProps) {
                 disabled={Boolean(deletingMemberId)}
                 className="interactive inline-flex items-center justify-center gap-2 rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {deletingMemberId ? "Deleting..." : "Delete profile"}
+                {deletingMemberId ? "Deleting..." : "Delete member"}
               </button>
             </div>
           </div>

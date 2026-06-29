@@ -7,7 +7,8 @@ create table if not exists project_categories (
   description text,
   team_lead text,
   website_url text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 create table if not exists team_members (
