@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/team-directory/EmptyState";
+import { DirectoryLoadingSkeleton } from "@/components/team-directory/DirectoryLoadingSkeleton";
 import { ProjectCategoryFilter } from "@/components/team-directory/ProjectCategoryFilter";
 import { TeamDirectoryHeader } from "@/components/team-directory/TeamDirectoryHeader";
 import { TeamMemberCard } from "@/components/team-directory/TeamMemberCard";
@@ -43,6 +44,7 @@ export function TeamDirectoryView() {
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [pendingDeleteMember, setPendingDeleteMember] =
     useState<TeamMember | null>(null);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -52,6 +54,16 @@ export function TeamDirectoryView() {
   const photoObjectUrlRef = useRef<string | null>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!actionSuccess) return;
+
+    const timer = window.setTimeout(() => {
+      setActionSuccess(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [actionSuccess]);
 
   const revokePhotoObjectUrl = () => {
     if (photoObjectUrlRef.current) {
@@ -130,6 +142,20 @@ export function TeamDirectoryView() {
     if (filter === FILTER_ALL) return members;
     return members.filter((member) => member.project_category_id === filter);
   }, [filter, members]);
+
+  const memberCountByCategory = useMemo(() => {
+    return members.reduce<Record<string, number>>((counts, member) => {
+      if (!member.project_category_id) return counts;
+      counts[member.project_category_id] =
+        (counts[member.project_category_id] ?? 0) + 1;
+      return counts;
+    }, {});
+  }, [members]);
+
+  const showSuccess = (message: string) => {
+    setActionSuccess(message);
+    setActionError(null);
+  };
 
   const resetForm = () => {
     revokePhotoObjectUrl();
@@ -230,6 +256,7 @@ export function TeamDirectoryView() {
             member.id === editingMemberId ? (data as TeamMember) : member,
           ),
         );
+        showSuccess(`${payload.name}'s profile was updated.`);
         resetForm();
       } else {
         const { data, error } = await supabase
@@ -241,6 +268,7 @@ export function TeamDirectoryView() {
         if (error) throw new Error(error.message);
 
         setMembers((current) => [data as TeamMember, ...current]);
+        showSuccess(`${payload.name} was added to the directory.`);
         resetForm();
       }
     } catch (error) {
@@ -302,6 +330,8 @@ export function TeamDirectoryView() {
         current.filter((member) => member.id !== pendingDeleteMember.id),
       );
 
+      showSuccess(`${pendingDeleteMember.name}'s profile was deleted.`);
+
       if (editingMemberId === pendingDeleteMember.id) {
         resetForm();
       }
@@ -320,30 +350,43 @@ export function TeamDirectoryView() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <TeamDirectoryHeader />
+      <TeamDirectoryHeader
+        memberCount={members.length}
+        categoryCount={categories.length}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {loadError ? (
           <div
             role="alert"
-            className="mb-6 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
+            className="animate-fade-in-up mb-6 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
           >
             <p className="font-medium">Unable to load team directory</p>
             <p className="mt-1">{loadError}</p>
             <button
               type="button"
               onClick={retryLoad}
-              className="mt-3 rounded-md border border-danger/30 px-3 py-1.5 text-sm font-medium transition-colors hover:border-danger/50"
+              className="interactive mt-3 rounded-md border border-danger/30 px-3 py-1.5 text-sm font-medium hover:border-danger/50"
             >
               Try again
             </button>
           </div>
         ) : null}
 
+        {actionSuccess ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="animate-fade-in-up mb-6 rounded-lg border border-accent/25 bg-accent-soft px-4 py-3 text-sm text-accent"
+          >
+            {actionSuccess}
+          </div>
+        ) : null}
+
         {actionError ? (
           <div
             role="alert"
-            className="mb-6 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
+            className="animate-fade-in-up mb-6 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
           >
             {actionError}
           </div>
@@ -355,18 +398,15 @@ export function TeamDirectoryView() {
               <ProjectCategoryFilter
                 categories={categories}
                 value={filter}
+                memberCountByCategory={memberCountByCategory}
+                totalCount={members.length}
+                filteredCount={filteredMembers.length}
                 onChange={setFilter}
               />
             </div>
 
             {isLoading ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="rounded-lg border border-border bg-surface px-6 py-12 text-center"
-              >
-                <p className="text-sm text-muted">Loading team directory...</p>
-              </div>
+              <DirectoryLoadingSkeleton />
             ) : filteredMembers.length === 0 ? (
               <EmptyState
                 title={
@@ -381,11 +421,15 @@ export function TeamDirectoryView() {
                 }
               />
             ) : (
-              <ul className="grid gap-4 sm:grid-cols-2">
-                {filteredMembers.map((member) => (
+              <ul
+                key={filter}
+                className="grid gap-4 sm:grid-cols-2"
+              >
+                {filteredMembers.map((member, index) => (
                   <li key={member.id}>
                     <TeamMemberCard
                       member={member}
+                      index={index}
                       onEdit={handleEdit}
                       onDelete={handleDeleteRequest}
                       isDeleting={deletingMemberId === member.id}
@@ -418,7 +462,7 @@ export function TeamDirectoryView() {
 
       {pendingDeleteMember ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 sm:items-center"
+          className="overlay-backdrop fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 sm:items-center"
           role="presentation"
           onClick={handleDeleteCancel}
         >
@@ -426,7 +470,7 @@ export function TeamDirectoryView() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-dialog-title"
-            className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-none"
+            className="animate-scale-in w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-none"
             onClick={(event) => event.stopPropagation()}
           >
             <h2
@@ -446,7 +490,7 @@ export function TeamDirectoryView() {
                 type="button"
                 onClick={handleDeleteCancel}
                 disabled={Boolean(deletingMemberId)}
-                className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-surface-muted disabled:opacity-50"
+                className="interactive rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -454,9 +498,19 @@ export function TeamDirectoryView() {
                 type="button"
                 onClick={() => void handleDeleteConfirm()}
                 disabled={Boolean(deletingMemberId)}
-                className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="interactive inline-flex items-center justify-center gap-2 rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {deletingMemberId ? "Deleting..." : "Delete profile"}
+                {deletingMemberId ? (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-4 w-4 animate-spin-slow rounded-full border-2 border-white/30 border-t-white"
+                    />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete profile"
+                )}
               </button>
             </div>
           </div>

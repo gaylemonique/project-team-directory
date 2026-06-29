@@ -6,6 +6,7 @@ import { getInitials } from "@/lib/team-directory/validation";
 
 type TeamMemberCardProps = {
   member: TeamMember;
+  index: number;
   onEdit: (member: TeamMember) => void;
   onDelete: (member: TeamMember) => void;
   isDeleting: boolean;
@@ -32,7 +33,7 @@ function MemberAvatar({ member }: { member: TeamMember }) {
       <img
         src={member.photo_url!}
         alt={`${member.name} profile photo`}
-        className="h-14 w-14 shrink-0 rounded-md border border-border object-cover"
+        className="h-14 w-14 shrink-0 rounded-md border border-border object-cover transition-transform duration-300 group-hover:scale-[1.02]"
         onError={() => setImageError(true)}
       />
     );
@@ -41,7 +42,7 @@ function MemberAvatar({ member }: { member: TeamMember }) {
   return (
     <div
       aria-hidden="true"
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-border bg-surface-muted text-sm font-semibold text-muted"
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-border bg-surface-muted text-sm font-semibold text-muted transition-colors group-hover:border-border-strong group-hover:bg-accent-soft group-hover:text-accent"
     >
       {getInitials(member.name) || "?"}
     </div>
@@ -50,6 +51,7 @@ function MemberAvatar({ member }: { member: TeamMember }) {
 
 export function TeamMemberCard({
   member,
+  index,
   onEdit,
   onDelete,
   isDeleting,
@@ -57,7 +59,13 @@ export function TeamMemberCard({
   const categoryName = member.project_categories?.name ?? "Uncategorized";
 
   return (
-    <article className="flex h-full flex-col rounded-lg border border-border bg-surface p-4 shadow-none">
+    <article
+      className={[
+        "group card-lift flex h-full flex-col rounded-lg border border-border bg-surface p-4 animate-fade-in-up",
+        isDeleting ? "pointer-events-none opacity-50" : "",
+      ].join(" ")}
+      style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+    >
       <div className="flex gap-3">
         <MemberAvatar member={member} />
         <div className="min-w-0 flex-1">
@@ -65,7 +73,7 @@ export function TeamMemberCard({
             {member.name}
           </h3>
           <p className="mt-0.5 truncate text-sm text-muted">{member.role}</p>
-          <p className="mt-2 inline-flex max-w-full rounded-sm bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
+          <p className="mt-2 inline-flex max-w-full rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
             <span className="truncate">{categoryName}</span>
           </p>
         </div>
@@ -95,7 +103,7 @@ export function TeamMemberCard({
             href={member.profile_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate text-sm font-medium text-accent underline-offset-2 hover:underline"
+            className="interactive truncate text-sm font-medium text-accent underline-offset-2 hover:underline"
           >
             View profile
           </a>
@@ -106,7 +114,7 @@ export function TeamMemberCard({
             type="button"
             onClick={() => onEdit(member)}
             disabled={isDeleting}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-border-strong hover:bg-surface-muted disabled:opacity-50"
+            className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:border-border-strong hover:bg-surface-muted disabled:opacity-50"
           >
             Edit
           </button>
@@ -114,7 +122,7 @@ export function TeamMemberCard({
             type="button"
             onClick={() => onDelete(member)}
             disabled={isDeleting}
-            className="rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger transition-colors hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isDeleting ? "Deleting..." : "Delete"}
           </button>

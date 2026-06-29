@@ -41,15 +41,24 @@ function SavingLabel({
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mt-1 text-xs text-danger">
+    <p role="alert" className="mt-1 animate-fade-in text-xs text-danger">
       {message}
     </p>
   );
 }
 
+function Spinner() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block h-4 w-4 animate-spin-slow rounded-full border-2 border-white/30 border-t-white"
+    />
+  );
+}
+
 function inputClass(hasError: boolean) {
   return [
-    "w-full rounded-md border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors",
+    "interactive w-full rounded-md border bg-surface px-3 py-2.5 text-sm text-foreground outline-none",
     hasError
       ? "border-danger focus:border-danger focus:ring-2 focus:ring-danger/20"
       : "border-border focus:border-accent focus:ring-2 focus:ring-accent/20",
@@ -75,10 +84,18 @@ export function TeamMemberForm({
   return (
     <section
       aria-labelledby="member-form-heading"
-      className="rounded-lg border border-border bg-surface p-5 sm:p-6"
+      className={[
+        "interactive rounded-lg border bg-surface p-5 sm:p-6",
+        isEditing ? "form-panel-editing" : "border-border",
+      ].join(" ")}
     >
       <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          {isEditing ? (
+            <p className="mb-2 inline-flex rounded-full bg-accent-soft px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent">
+              Editing profile
+            </p>
+          ) : null}
           <h2
             id="member-form-heading"
             className="font-display text-xl text-foreground"
@@ -86,7 +103,9 @@ export function TeamMemberForm({
             {isEditing ? "Edit team member" : "Add team member"}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Required fields are marked. Optional details help teammates find you.
+            Required fields are marked with{" "}
+            <span className="text-danger">*</span>. Optional details help
+            teammates find you faster.
           </p>
         </div>
         {isEditing ? (
@@ -94,7 +113,7 @@ export function TeamMemberForm({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="self-start rounded-md border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:border-border-strong hover:text-foreground disabled:opacity-50"
+            className="interactive self-start rounded-md border border-border px-3 py-1.5 text-sm text-muted hover:border-border-strong hover:text-foreground disabled:opacity-50"
           >
             Cancel edit
           </button>
@@ -121,6 +140,7 @@ export function TeamMemberForm({
             value={formData.name}
             onChange={(event) => onChange("name", event.target.value)}
             className={inputClass(Boolean(errors.name))}
+            placeholder="Your full name"
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? "name-error" : undefined}
           />
@@ -138,6 +158,7 @@ export function TeamMemberForm({
             value={formData.role}
             onChange={(event) => onChange("role", event.target.value)}
             className={inputClass(Boolean(errors.role))}
+            placeholder="e.g. Frontend Engineer"
             aria-invalid={Boolean(errors.role)}
           />
           <FieldError message={errors.role} />
@@ -179,18 +200,19 @@ export function TeamMemberForm({
                 <img
                   src={photoPreviewUrl}
                   alt="Selected profile photo preview"
-                  className="h-20 w-20 shrink-0 rounded-md border border-border object-cover"
+                  className="h-20 w-20 shrink-0 rounded-md border border-border object-cover transition-all duration-300"
                 />
               ) : (
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-surface-muted text-xs text-muted">
-                  No photo
+                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-border bg-surface-muted text-center text-[11px] leading-tight text-muted">
+                  <span className="text-lg text-placeholder">↑</span>
+                  <span>No photo</span>
                 </div>
               )}
 
               <div className="min-w-0 flex-1 space-y-2">
                 <label
                   htmlFor="photo"
-                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-border-strong hover:bg-surface-muted"
+                  className="interactive inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-border-strong hover:bg-surface-muted"
                 >
                   {photoPreviewUrl ? "Replace photo" : "Upload photo"}
                 </label>
@@ -336,8 +358,9 @@ export function TeamMemberForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="interactive inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {isSaving ? <Spinner /> : null}
             <SavingLabel
               isSaving={isSaving}
               isEditing={isEditing}
