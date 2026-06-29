@@ -13,6 +13,8 @@ type TeamMemberFormProps = {
   photoError?: string;
   isSaving: boolean;
   isEditing: boolean;
+  lockCategory?: boolean;
+  lockedCategoryName?: string;
   onChange: (field: keyof TeamMemberFormData, value: string) => void;
   onNewCategoryNameChange: (value: string) => void;
   onPhotoSelect: (file: File | null) => void;
@@ -78,6 +80,8 @@ export function TeamMemberForm({
   photoError,
   isSaving,
   isEditing,
+  lockCategory = false,
+  lockedCategoryName,
   onChange,
   onNewCategoryNameChange,
   onPhotoSelect,
@@ -178,26 +182,32 @@ export function TeamMemberForm({
           >
             Project category <span className="text-danger">*</span>
           </label>
-          <select
-            id="project_category_id"
-            name="project_category_id"
-            value={formData.project_category_id}
-            onChange={(event) =>
-              onChange("project_category_id", event.target.value)
-            }
-            className={inputClass(Boolean(errors.project_category_id))}
-            aria-invalid={Boolean(errors.project_category_id)}
-          >
-            <option value="">Select a category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-            <option value={ADD_NEW_CATEGORY}>Add new category...</option>
-          </select>
+          {lockCategory && lockedCategoryName ? (
+            <div className="rounded-md border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground">
+              {lockedCategoryName}
+            </div>
+          ) : (
+            <select
+              id="project_category_id"
+              name="project_category_id"
+              value={formData.project_category_id}
+              onChange={(event) =>
+                onChange("project_category_id", event.target.value)
+              }
+              className={inputClass(Boolean(errors.project_category_id))}
+              aria-invalid={Boolean(errors.project_category_id)}
+            >
+              <option value="">Select a category</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+              <option value={ADD_NEW_CATEGORY}>Add new category...</option>
+            </select>
+          )}
           <FieldError message={errors.project_category_id} />
-          {isAddingCategory ? (
+          {!lockCategory && formData.project_category_id === ADD_NEW_CATEGORY ? (
             <div className="mt-3 animate-fade-in">
               <label
                 htmlFor="new_category_name"

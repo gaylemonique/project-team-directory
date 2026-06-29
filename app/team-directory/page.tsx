@@ -1,5 +1,13 @@
-import { redirect } from "next/navigation";
+import { TeamDirectoryView } from "@/components/team-directory/TeamDirectoryView";
 
-export default function TeamDirectoryLegacyPage() {
-  redirect("/");
+type TeamDirectoryPageProps = {
+  searchParams: Promise<{ category?: string }>;
+};
+
+export default async function TeamDirectoryPage({
+  searchParams,
+}: TeamDirectoryPageProps) {
+  const { category } = await searchParams;
+
+  return <TeamDirectoryView initialCategoryId={category ?? null} />;
 }
