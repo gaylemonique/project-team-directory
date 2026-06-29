@@ -1,0 +1,80 @@
+import type { FormErrors, TeamMemberFormData } from "@/types/team-directory";
+
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export function validateTeamMemberForm(
+  data: TeamMemberFormData,
+): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!data.name.trim()) {
+    errors.name = "Name is required.";
+  }
+
+  if (!data.role.trim()) {
+    errors.role = "Role is required.";
+  }
+
+  if (!data.project_category_id) {
+    errors.project_category_id = "Project category is required.";
+  }
+
+  if (data.photo_url.trim() && !isValidUrl(data.photo_url.trim())) {
+    errors.photo_url = "Enter a valid photo URL (http or https).";
+  }
+
+  if (data.profile_url.trim() && !isValidUrl(data.profile_url.trim())) {
+    errors.profile_url = "Enter a valid profile URL (http or https).";
+  }
+
+  return errors;
+}
+
+export function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function memberToFormData(
+  member: import("@/types/team-directory").TeamMember,
+): TeamMemberFormData {
+  return {
+    name: member.name,
+    role: member.role,
+    project_category_id: member.project_category_id ?? "",
+    photo_url: member.photo_url ?? "",
+    project_assignment: member.project_assignment ?? "",
+    favorite_stack: member.favorite_stack ?? "",
+    current_focus: member.current_focus ?? "",
+    learning_goal: member.learning_goal ?? "",
+    fun_fact: member.fun_fact ?? "",
+    profile_url: member.profile_url ?? "",
+  };
+}
+
+export function formDataToPayload(data: TeamMemberFormData) {
+  return {
+    name: data.name.trim(),
+    role: data.role.trim(),
+    project_category_id: data.project_category_id,
+    photo_url: data.photo_url.trim() || null,
+    project_assignment: data.project_assignment.trim() || null,
+    favorite_stack: data.favorite_stack.trim() || null,
+    current_focus: data.current_focus.trim() || null,
+    learning_goal: data.learning_goal.trim() || null,
+    fun_fact: data.fun_fact.trim() || null,
+    profile_url: data.profile_url.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+}
