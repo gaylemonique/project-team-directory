@@ -1,17 +1,20 @@
 "use client";
 
 import type { FormErrors, ProjectCategory, TeamMemberFormData } from "@/types/team-directory";
+import { ADD_NEW_CATEGORY } from "@/types/team-directory";
 
 type TeamMemberFormProps = {
   categories: ProjectCategory[];
   formData: TeamMemberFormData;
   errors: FormErrors;
+  newCategoryName: string;
   photoPreviewUrl: string | null;
   photoFileName: string | null;
   photoError?: string;
   isSaving: boolean;
   isEditing: boolean;
   onChange: (field: keyof TeamMemberFormData, value: string) => void;
+  onNewCategoryNameChange: (value: string) => void;
   onPhotoSelect: (file: File | null) => void;
   onPhotoRemove: () => void;
   onSubmit: () => void;
@@ -69,18 +72,22 @@ export function TeamMemberForm({
   categories,
   formData,
   errors,
+  newCategoryName,
   photoPreviewUrl,
   photoFileName,
   photoError,
   isSaving,
   isEditing,
   onChange,
+  onNewCategoryNameChange,
   onPhotoSelect,
   onPhotoRemove,
   onSubmit,
   onCancel,
 }: TeamMemberFormProps) {
   const hasPhotoUpload = Boolean(photoFileName);
+  const isAddingCategory = formData.project_category_id === ADD_NEW_CATEGORY;
+
   return (
     <section
       aria-labelledby="member-form-heading"
@@ -187,8 +194,30 @@ export function TeamMemberForm({
                 {category.name}
               </option>
             ))}
+            <option value={ADD_NEW_CATEGORY}>Add new category...</option>
           </select>
           <FieldError message={errors.project_category_id} />
+          {isAddingCategory ? (
+            <div className="mt-3 animate-fade-in">
+              <label
+                htmlFor="new_category_name"
+                className="mb-1.5 block text-sm font-medium"
+              >
+                New category name <span className="text-danger">*</span>
+              </label>
+              <input
+                id="new_category_name"
+                name="new_category_name"
+                type="text"
+                value={newCategoryName}
+                onChange={(event) => onNewCategoryNameChange(event.target.value)}
+                className={inputClass(Boolean(errors.new_category_name))}
+                placeholder="e.g. Platform Engineering"
+                aria-invalid={Boolean(errors.new_category_name)}
+              />
+              <FieldError message={errors.new_category_name} />
+            </div>
+          ) : null}
         </div>
 
         <div className="sm:col-span-2">

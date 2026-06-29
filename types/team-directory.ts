@@ -36,8 +36,6 @@ export type TeamMemberFormData = {
   profile_url: string;
 };
 
-export type FormErrors = Partial<Record<keyof TeamMemberFormData, string>>;
-
 export const EMPTY_FORM: TeamMemberFormData = {
   name: "",
   role: "",
@@ -52,5 +50,10 @@ export const EMPTY_FORM: TeamMemberFormData = {
 };
 
 export const FILTER_ALL = "all";
+export const ADD_NEW_CATEGORY = "__add_new_category__";
 
 export type CategoryFilterValue = typeof FILTER_ALL | string;
+
+export type FormErrors = Partial<Record<keyof TeamMemberFormData, string>> & {
+  new_category_name?: string;
+};
