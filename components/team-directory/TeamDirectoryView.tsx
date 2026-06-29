@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/team-directory/EmptyState";
 import { DirectoryLoadingSkeleton } from "@/components/team-directory/DirectoryLoadingSkeleton";
 import { ProjectCategoryFilter } from "@/components/team-directory/ProjectCategoryFilter";
@@ -34,7 +36,19 @@ import {
 const MEMBER_SELECT =
   "*, project_categories(id, name, description, team_lead, created_at)";
 
-export function TeamDirectoryView() {
+type TeamDirectoryViewProps = {
+  initialCategoryId?: string | null;
+  initialMemberId?: string | null;
+  mode?: "full" | "form";
+};
+
+export function TeamDirectoryView({
+  initialCategoryId = null,
+  initialMemberId = null,
+  mode = "full",
+}: TeamDirectoryViewProps) {
+  const router = useRouter();
+  const isFormMode = mode === "form";
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [filter, setFilter] = useState<CategoryFilterValue>(FILTER_ALL);
@@ -121,7 +135,35 @@ export function TeamDirectoryView() {
         }
 
         setCategories(categoriesResult.data ?? []);
-        setMembers((membersResult.data ?? []) as TeamMember[]);
+        const loadedMembers = (membersResult.data ?? []) as TeamMember[];
+        setMembers(loadedMembers);
+
+        const categoryIds = new Set(
+          (categoriesResult.data ?? []).map((category) => category.id),
+        );
+        if (initialCategoryId && categoryIds.has(initialCategoryId)) {
+          if (isFormMode) {
+            setFormData((current) => ({
+              ...current,
+              project_category_id: initialCategoryId,
+            }));
+          } else {
+            setFilter(initialCategoryId);
+          }
+        }
+
+        if (initialMemberId) {
+          const memberToEdit = loadedMembers.find(
+            (member) => member.id === initialMemberId,
+          );
+          if (memberToEdit) {
+            setEditingMemberId(memberToEdit.id);
+            setFormData(memberToFormData(memberToEdit));
+            setExistingPhotoUrl(memberToEdit.photo_url);
+            setPhotoPreviewUrl(memberToEdit.photo_url);
+          }
+        }
+
         setLoadError(null);
       } catch (error) {
         if (cancelled) return;
@@ -143,7 +185,7 @@ export function TeamDirectoryView() {
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, initialCategoryId, initialMemberId, isFormMode]);
 
   const retryLoad = () => {
     setIsLoading(true);
@@ -163,7 +205,11 @@ export function TeamDirectoryView() {
 
   const resetForm = () => {
     revokePhotoObjectUrl();
-    setFormData(EMPTY_FORM);
+    setFormData(
+      initialCategoryId && isFormMode
+        ? { ...EMPTY_FORM, project_category_id: initialCategoryId }
+        : EMPTY_FORM,
+    );
     setFormErrors({});
     setEditingMemberId(null);
     setSelectedPhotoFile(null);
@@ -171,6 +217,15 @@ export function TeamDirectoryView() {
     setPhotoError(undefined);
     setExistingPhotoUrl(null);
     setNewCategoryName("");
+  };
+
+  const handleFormCancel = () => {
+    if (isFormMode && initialCategoryId) {
+      router.push(`/projects/${initialCategoryId}`);
+      return;
+    }
+
+    resetForm();
   };
 
   const handleFieldChange = (
@@ -306,6 +361,12 @@ export function TeamDirectoryView() {
             member.id === editingMemberId ? (data as TeamMember) : member,
           ),
         );
+
+        if (isFormMode && initialCategoryId) {
+          router.push(`/projects/${initialCategoryId}`);
+          return;
+        }
+
         showSuccess(`${payload.name}'s profile was updated.`);
         resetForm();
       } else {
@@ -322,6 +383,12 @@ export function TeamDirectoryView() {
         }
 
         setMembers((current) => [data as TeamMember, ...current]);
+
+        if (isFormMode && initialCategoryId) {
+          router.push(`/projects/${initialCategoryId}`);
+          return;
+        }
+
         showSuccess(`${payload.name} was added to the directory.`);
         resetForm();
       }
@@ -406,14 +473,53 @@ export function TeamDirectoryView() {
     }
   };
 
+  const lockedCategory = useMemo(
+    () =>
+      initialCategoryId
+        ? categories.find((category) => category.id === initialCategoryId) ?? null
+        : null,
+    [categories, initialCategoryId],
+  );
+
   return (
     <div className="min-h-dvh bg-background">
-      <TeamDirectoryHeader
-        memberCount={members.length}
-        categoryCount={categories.length}
-      />
+      {isFormMode ? (
+        <header className="animate-fade-in border-b border-border bg-surface">
+          <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+            {initialCategoryId ? (
+              <Link
+                href={`/projects/${initialCategoryId}`}
+                className="interactive mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-foreground"
+              >
+                ← Back to project
+              </Link>
+            ) : null}
+            <h1 className="font-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
+              {editingMemberId ? "Edit member profile" : "Create member profile"}
+            </h1>
+            {lockedCategory ? (
+              <p className="mt-2 text-sm text-muted">
+                For{" "}
+                <span className="font-medium text-foreground">
+                  {lockedCategory.name}
+                </span>
+              </p>
+            ) : null}
+          </div>
+        </header>
+      ) : (
+        <TeamDirectoryHeader
+          memberCount={members.length}
+          categoryCount={categories.length}
+        />
+      )}
 
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <main
+        className={[
+          "mx-auto px-4 py-8 sm:px-6 lg:px-8",
+          isFormMode ? "max-w-3xl" : "max-w-6xl",
+        ].join(" ")}
+      >
         {loadError ? (
           <div
             role="alert"
@@ -450,6 +556,31 @@ export function TeamDirectoryView() {
           </div>
         ) : null}
 
+        {isFormMode ? (
+          isLoading ? (
+            <DirectoryLoadingSkeleton />
+          ) : (
+            <TeamMemberForm
+              categories={categories}
+              formData={formData}
+              errors={formErrors}
+              newCategoryName={newCategoryName}
+              photoPreviewUrl={photoPreviewUrl}
+              photoFileName={selectedPhotoFile?.name ?? null}
+              photoError={photoError}
+              isSaving={isSaving}
+              isEditing={Boolean(editingMemberId)}
+              lockCategory={Boolean(initialCategoryId)}
+              lockedCategoryName={lockedCategory?.name}
+              onChange={handleFieldChange}
+              onNewCategoryNameChange={handleNewCategoryNameChange}
+              onPhotoSelect={handlePhotoSelect}
+              onPhotoRemove={handlePhotoRemove}
+              onSubmit={() => void handleSubmit()}
+              onCancel={handleFormCancel}
+            />
+          )
+        ) : (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
           <div className="order-2 lg:order-1">
             <div className="mb-5">
@@ -515,6 +646,7 @@ export function TeamDirectoryView() {
             />
           </div>
         </div>
+        )}
       </main>
 
       {pendingDeleteMember ? (

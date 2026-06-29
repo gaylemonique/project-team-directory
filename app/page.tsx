@@ -1,5 +1,5 @@
-import { TeamDirectoryView } from "@/components/team-directory/TeamDirectoryView";
+import { ProjectsLandingView } from "@/components/landing/ProjectsLandingView";
 
 export default function Home() {
-  return <TeamDirectoryView />;
+  return <ProjectsLandingView />;
 }

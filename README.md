@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000).
+Visit [http://localhost:3000](http://localhost:3000) to browse projects, or [http://localhost:3000/team-directory](http://localhost:3000/team-directory) for the full directory.
 
 ## Scripts
 
@@ -26,7 +26,8 @@ npm run verify:supabase
 
 ## Route
 
-- `/` — create, browse, filter, edit, and delete team member profiles
+- `/` — browse all projects and open a project directory
+- `/team-directory` — create, browse, filter, edit, and delete team member profiles
 
 ## Requirements
 
