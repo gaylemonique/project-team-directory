@@ -100,7 +100,7 @@ export function TeamMemberForm({
             id="member-form-heading"
             className="font-display text-xl text-foreground"
           >
-            {isEditing ? "Edit team member" : "Add team member"}
+            {isEditing ? "Edit team member" : "Member profile"}
           </h2>
           <p className="mt-1 text-sm text-muted">
             Required fields are marked with{" "}
