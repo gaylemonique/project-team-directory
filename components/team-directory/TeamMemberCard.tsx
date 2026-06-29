@@ -97,36 +97,33 @@ export function TeamMemberCard({
         ) : null}
       </dl>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
         {member.profile_url ? (
           <a
             href={member.profile_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="interactive truncate text-sm font-medium text-accent underline-offset-2 hover:underline"
+            className="interactive rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:border-border-strong hover:bg-surface-muted"
           >
             View GitHub profile
           </a>
         ) : null}
-
-        <div className="ml-auto flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit(member)}
-            disabled={isDeleting}
-            className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:border-border-strong hover:bg-surface-muted disabled:opacity-50"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(member)}
-            disabled={isDeleting}
-            className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onEdit(member)}
+          disabled={isDeleting}
+          className="interactive rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:border-border-strong hover:bg-surface-muted disabled:opacity-50"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(member)}
+          disabled={isDeleting}
+          className="interactive rounded-md border border-danger/30 bg-danger-soft px-3 py-1.5 text-sm text-danger hover:border-danger/50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isDeleting ? "Deleting..." : "Delete"}
+        </button>
       </div>
     </article>
   );
