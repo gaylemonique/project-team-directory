@@ -49,7 +49,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000/team-directory](http://localhost:3000/team-directory).
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Tables
 
@@ -77,7 +77,7 @@ Open [http://localhost:3000/team-directory](http://localhost:3000/team-directory
 | current_focus | text | Optional |
 | learning_goal | text | Optional |
 | fun_fact | text | Optional |
-| profile_url | text | Optional GitHub/LinkedIn URL |
+| profile_url | text | Optional GitHub profile URL |
 | created_at | timestamptz | Default now |
 | updated_at | timestamptz | Default now |
 

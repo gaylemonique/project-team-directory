@@ -1,9 +1,11 @@
 import type { FormErrors, TeamMemberFormData } from "@/types/team-directory";
 
-function isValidUrl(value: string): boolean {
+function isValidGitHubUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    const host = url.hostname.toLowerCase();
+    return host === "github.com" || host === "www.github.com";
   } catch {
     return false;
   }
@@ -26,8 +28,8 @@ export function validateTeamMemberForm(
     errors.project_category_id = "Project category is required.";
   }
 
-  if (data.profile_url.trim() && !isValidUrl(data.profile_url.trim())) {
-    errors.profile_url = "Enter a valid profile URL (http or https).";
+  if (data.profile_url.trim() && !isValidGitHubUrl(data.profile_url.trim())) {
+    errors.profile_url = "Enter a valid GitHub profile URL.";
   }
 
   return errors;
