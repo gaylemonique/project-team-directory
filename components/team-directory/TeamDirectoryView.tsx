@@ -143,15 +143,6 @@ export function TeamDirectoryView() {
     return members.filter((member) => member.project_category_id === filter);
   }, [filter, members]);
 
-  const memberCountByCategory = useMemo(() => {
-    return members.reduce<Record<string, number>>((counts, member) => {
-      if (!member.project_category_id) return counts;
-      counts[member.project_category_id] =
-        (counts[member.project_category_id] ?? 0) + 1;
-      return counts;
-    }, {});
-  }, [members]);
-
   const showSuccess = (message: string) => {
     setActionSuccess(message);
     setActionError(null);
@@ -398,9 +389,6 @@ export function TeamDirectoryView() {
               <ProjectCategoryFilter
                 categories={categories}
                 value={filter}
-                memberCountByCategory={memberCountByCategory}
-                totalCount={members.length}
-                filteredCount={filteredMembers.length}
                 onChange={setFilter}
               />
             </div>
