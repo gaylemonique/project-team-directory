@@ -105,7 +105,7 @@ export function TeamMemberCard({
             rel="noopener noreferrer"
             className="interactive truncate text-sm font-medium text-accent underline-offset-2 hover:underline"
           >
-            View profile
+            View GitHub profile
           </a>
         ) : null}
 
